@@ -263,4 +263,4 @@ Then it shows the fully assembled JSON spec, you confirm, and it submits via `cr
 
 ## License
 
-AGPL-3.0
+Apache-2.0. See [LICENSE](LICENSE).

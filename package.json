@@ -2,7 +2,7 @@
   "name": "@parseable/parseable-mcp-server",
   "version": "0.1.0",
   "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
-  "license": "AGPL-3.0",
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "parseable-mcp-server": "dist/server.js"
