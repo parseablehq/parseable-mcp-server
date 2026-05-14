@@ -1,5 +1,5 @@
 {
-  "name": "@parseable/mcp-server",
+  "name": "@parseable/parseable-mcp-server",
   "version": "0.1.0",
   "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
   "license": "AGPL-3.0",
@@ -38,5 +38,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
