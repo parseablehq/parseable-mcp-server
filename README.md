@@ -6,7 +6,18 @@ Model Context Protocol server for [Parseable](https://www.parseable.com). Lets a
 
 ## Quickstart
 
-One command, interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
+### One-click install for VS Code
+
+Click one of these buttons to install Parseable MCP Server in VS Code or VS Code Insiders:
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Parseable_MCP-007ACC?style=for-the-badge&logo=visualstudiocode)](vscode:mcp/install?%7B%22name%22%3A%22parseable%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40parseable%2Fparseable-mcp-server%22%5D%2C%22env%22%3A%7B%22PARSEABLE_URL%22%3A%22%22%2C%22PARSEABLE_USERNAME%22%3A%22%22%2C%22PARSEABLE_PASSWORD%22%3A%22%22%7D%7D)
+[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Parseable_MCP-24bfa5?style=for-the-badge&logo=visualstudiocode)](vscode-insiders:mcp/install?%7B%22name%22%3A%22parseable%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40parseable%2Fparseable-mcp-server%22%5D%2C%22env%22%3A%7B%22PARSEABLE_URL%22%3A%22%22%2C%22PARSEABLE_USERNAME%22%3A%22%22%2C%22PARSEABLE_PASSWORD%22%3A%22%22%7D%7D)
+
+After clicking, VS Code opens with the server entry pre-filled. Fill in `PARSEABLE_URL`, `PARSEABLE_USERNAME`, and `PARSEABLE_PASSWORD` when prompted.
+
+### One command for Claude Desktop / Cursor
+
+Interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
 
 ```bash
 npx -y @parseable/parseable-mcp-server init
