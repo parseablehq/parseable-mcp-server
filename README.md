@@ -6,18 +6,7 @@ Model Context Protocol server for [Parseable](https://www.parseable.com). Lets a
 
 ## Quickstart
 
-### One-click install for VS Code
-
-Click one of these buttons to install Parseable MCP Server in VS Code or VS Code Insiders:
-
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Parseable_MCP-007ACC?style=for-the-badge&logo=visualstudiocode)](vscode:mcp/install?%7B%22name%22%3A%22parseable%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40parseable%2Fparseable-mcp-server%22%5D%2C%22env%22%3A%7B%22PARSEABLE_URL%22%3A%22%22%2C%22PARSEABLE_USERNAME%22%3A%22%22%2C%22PARSEABLE_PASSWORD%22%3A%22%22%7D%7D)
-[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Parseable_MCP-24bfa5?style=for-the-badge&logo=visualstudiocode)](vscode-insiders:mcp/install?%7B%22name%22%3A%22parseable%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40parseable%2Fparseable-mcp-server%22%5D%2C%22env%22%3A%7B%22PARSEABLE_URL%22%3A%22%22%2C%22PARSEABLE_USERNAME%22%3A%22%22%2C%22PARSEABLE_PASSWORD%22%3A%22%22%7D%7D)
-
-After clicking, VS Code opens with the server entry pre-filled. Fill in `PARSEABLE_URL`, `PARSEABLE_USERNAME`, and `PARSEABLE_PASSWORD` when prompted.
-
-### One command for Claude Desktop / Cursor
-
-Interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
+One command, interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
 
 ```bash
 npx -y @parseable/parseable-mcp-server init
@@ -40,67 +29,74 @@ Supported `--client` values: `claude-desktop`, `cursor`. Existing config files a
 ## Tools
 
 ### Discovery
-| Tool | Purpose |
-|---|---|
-| `list_datasets` | List all log datasets on the server. |
-| `get_dataset_schema` | Get column names + types for a dataset. |
-| `get_dataset_info` | Get dataset metadata (created_at, retention, owner, time window). |
-| `get_dataset_stats` | Get event count and storage bytes for a dataset. |
-| `sample_events` | Return the most recent N events from a dataset (time-bounded, row-capped). |
+
+| Tool                 | Purpose                                                                    |
+| -------------------- | -------------------------------------------------------------------------- |
+| `list_datasets`      | List all log datasets on the server.                                       |
+| `get_dataset_schema` | Get column names + types for a dataset.                                    |
+| `get_dataset_info`   | Get dataset metadata (created_at, retention, owner, time window).          |
+| `get_dataset_stats`  | Get event count and storage bytes for a dataset.                           |
+| `sample_events`      | Return the most recent N events from a dataset (time-bounded, row-capped). |
 
 ### Query
-| Tool | Purpose |
-|---|---|
-| `query_sql` | Run a SQL `SELECT` over a time window. DDL/DML blocked. Auto-injects `LIMIT`. |
+
+| Tool           | Purpose                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| `query_sql`    | Run a SQL `SELECT` over a time window. DDL/DML blocked. Auto-injects `LIMIT`.              |
 | `query_promql` | Run PromQL instant or range query against a metrics dataset. Auto-routes by `start`+`end`. |
 
 ### Alerts
-| Tool | Purpose |
-|---|---|
-| `list_alerts` | List all alerts with state, severity, tags. |
-| `get_alert` | Get full config for one alert. |
-| `list_alert_tags` | List all alert tags in use. |
-| `enable_alert` | Enable an alert. |
-| `disable_alert` | Disable an alert. |
-| `evaluate_alert` | Force-evaluate an alert now. **May fire real notifications.** |
-| `create_alert` | Create a new alert. Walks user through 8 questions (title, dataset, condition, window, frequency, severity, tags, targets), confirms assembled spec before submitting. |
+
+| Tool              | Purpose                                                                                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_alerts`     | List all alerts with state, severity, tags.                                                                                                                            |
+| `get_alert`       | Get full config for one alert.                                                                                                                                         |
+| `list_alert_tags` | List all alert tags in use.                                                                                                                                            |
+| `enable_alert`    | Enable an alert.                                                                                                                                                       |
+| `disable_alert`   | Disable an alert.                                                                                                                                                      |
+| `evaluate_alert`  | Force-evaluate an alert now. **May fire real notifications.**                                                                                                          |
+| `create_alert`    | Create a new alert. Walks user through 8 questions (title, dataset, condition, window, frequency, severity, tags, targets), confirms assembled spec before submitting. |
 
 ### Alert targets
+
 Notification destinations referenced by alerts. Three supported types: **Slack**, **generic webhook**, **Alertmanager**.
 
-| Tool | Purpose |
-|---|---|
-| `list_alert_targets` | List all configured targets with ID, name, type. Called automatically by `create_alert` so the user picks targets by name instead of typing UUIDs. |
-| `get_alert_target` | Get full config for one target (endpoint, headers, auth, notification interval). |
-| `create_alert_target` | Create a new Slack/webhook/Alertmanager target. |
+| Tool                  | Purpose                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_alert_targets`  | List all configured targets with ID, name, type. Called automatically by `create_alert` so the user picks targets by name instead of typing UUIDs. |
+| `get_alert_target`    | Get full config for one target (endpoint, headers, auth, notification interval).                                                                   |
+| `create_alert_target` | Create a new Slack/webhook/Alertmanager target.                                                                                                    |
 
 ### Diagnostics
-| Tool | Purpose |
-|---|---|
-| `ping` | Check server connectivity and return version/build info (`/about`), `/liveness`, `/readiness`. Use to debug MCP-server → Parseable connection issues. |
-| `explain_query` | Run `EXPLAIN` on a SQL query without executing it. Returns DataFusion plan for debugging slow queries, predicate pushdown, partition pruning. |
+
+| Tool            | Purpose                                                                                                                                               |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ping`          | Check server connectivity and return version/build info (`/about`), `/liveness`, `/readiness`. Use to debug MCP-server → Parseable connection issues. |
+| `explain_query` | Run `EXPLAIN` on a SQL query without executing it. Returns DataFusion plan for debugging slow queries, predicate pushdown, partition pruning.         |
 
 ### RBAC (read-only)
+
 Inspect users, roles, and effective access. **No tools for creating, modifying, or deleting users/roles** — RBAC mutation stays in the Parseable UI/CLI by design.
 
-| Tool | Purpose |
-|---|---|
-| `list_users` | List all registered users. |
-| `get_user_roles` | Get the roles assigned to a specific user. |
-| `list_roles` | List all role names defined on the server. |
-| `get_role` | Get the privilege definition for a role (actions + datasets). |
-| `get_default_role` | Get the default role assigned to new users. |
+| Tool               | Purpose                                                       |
+| ------------------ | ------------------------------------------------------------- |
+| `list_users`       | List all registered users.                                    |
+| `get_user_roles`   | Get the roles assigned to a specific user.                    |
+| `list_roles`       | List all role names defined on the server.                    |
+| `get_role`         | Get the privilege definition for a role (actions + datasets). |
+| `get_default_role` | Get the default role assigned to new users.                   |
 
 These compose for permission audits: "Does user X have write access to dataset Y?" → call `get_user_roles(X)` → for each role call `get_role` → check if `Ingest` or `PutAlert` privilege covers Y.
 
 ### Admin (read-only)
+
 Inspect cluster health and dataset lifecycle. **No tools for mutating cluster state or retention** — keep changes in UI/CLI by design.
 
-| Tool | Purpose |
-|---|---|
-| `get_cluster_status` | List all nodes (Prism, Querier, Ingestor, Indexer) with status. Distributed mode only. |
+| Tool                  | Purpose                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `get_cluster_status`  | List all nodes (Prism, Querier, Ingestor, Indexer) with status. Distributed mode only.            |
 | `get_cluster_metrics` | Aggregated metrics across all nodes (ingest rate, query latency, storage). Distributed mode only. |
-| `get_retention` | Get retention policy for a dataset. |
+| `get_retention`       | Get retention policy for a dataset.                                                               |
 
 ## Prerequisites
 
@@ -125,14 +121,14 @@ node dist/server.js
 
 All configuration via environment variables (set in your MCP client's config file, not a `.env`):
 
-| Var | Required | Default | Purpose |
-|---|---|---|---|
-| `PARSEABLE_URL` | ✅ | — | Parseable server base URL, no trailing slash |
-| `PARSEABLE_USERNAME` | ✅ | — | Basic auth username |
-| `PARSEABLE_PASSWORD` | ✅ | — | Basic auth password |
-| `PARSEABLE_DEFAULT_DATASET` | | — | Scope a tool prompt to one dataset (advisory) |
-| `PARSEABLE_MAX_ROWS` | | 1000 | Hard cap on query result rows |
-| `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP request timeout |
+| Var                          | Required | Default | Purpose                                       |
+| ---------------------------- | -------- | ------- | --------------------------------------------- |
+| `PARSEABLE_URL`              | ✅       | —       | Parseable server base URL, no trailing slash  |
+| `PARSEABLE_USERNAME`         | ✅       | —       | Basic auth username                           |
+| `PARSEABLE_PASSWORD`         | ✅       | —       | Basic auth password                           |
+| `PARSEABLE_DEFAULT_DATASET`  |          | —       | Scope a tool prompt to one dataset (advisory) |
+| `PARSEABLE_MAX_ROWS`         |          | 1000    | Hard cap on query result rows                 |
+| `PARSEABLE_QUERY_TIMEOUT_MS` |          | 30000   | HTTP request timeout                          |
 
 ## Client setup
 
@@ -238,15 +234,15 @@ Same shape as Cursor's `mcp.json`. Consult each client's MCP docs for the exact 
 
 Once wired:
 
-- *"What datasets do I have in Parseable?"*
-- *"Show schema for `nginx_access`."*
-- *"Run SQL: count events per status code in `nginx_access` over the last hour."*
-- *"Plot rate(http_requests_total[5m]) from `otel_metrics` over last 30 min, step 1m."*
-- *"List my alerts and which ones are disabled."*
-- *"Disable alert `<id>`, too noisy."*
-- *"Create an alert that fires when 5xx count in `nginx_access` > 50 over 5 min, severity high, notify the ops Slack channel."* — the client walks the 8-step Q&A, calls `list_alert_targets` to pick "ops Slack" by name, then submits.
-- *"What notification targets are configured?"* — calls `list_alert_targets`.
-- *"Add a Slack target pointing at `https://hooks.slack.com/services/...` named ops-alerts."* — calls `create_alert_target`.
+- _"What datasets do I have in Parseable?"_
+- _"Show schema for `nginx_access`."_
+- _"Run SQL: count events per status code in `nginx_access` over the last hour."_
+- _"Plot rate(http_requests_total[5m]) from `otel_metrics` over last 30 min, step 1m."_
+- _"List my alerts and which ones are disabled."_
+- _"Disable alert `<id>`, too noisy."_
+- _"Create an alert that fires when 5xx count in `nginx_access` > 50 over 5 min, severity high, notify the ops Slack channel."_ — the client walks the 8-step Q&A, calls `list_alert_targets` to pick "ops Slack" by name, then submits.
+- _"What notification targets are configured?"_ — calls `list_alert_targets`.
+- _"Add a Slack target pointing at `https://hooks.slack.com/services/...` named ops-alerts."_ — calls `create_alert_target`.
 
 ## Security notes
 
