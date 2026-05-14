@@ -97,7 +97,7 @@ export function mergeConfig(
   };
 
   const servers = (existing[configKey] as Record<string, unknown>) ?? {};
-  servers.parseable = entry;
+  servers.Parseable = entry;
   return { ...existing, [configKey]: servers };
 }
 

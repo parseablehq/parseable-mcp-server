@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ParseableClient, ParseableError } from "./client.js";
 import { loadConfig } from "./config.js";
+import { PARSEABLE_ICON_DATA_URI } from "./icon.js";
 import { tools } from "./tools/index.js";
 import { errorResult, jsonResult } from "./tools/types.js";
 
@@ -19,7 +20,18 @@ async function main() {
 
   const server = new McpServer({
     name: "parseable-mcp-server",
-    version: "0.1.0",
+    title: "Parseable",
+    version: "0.2.3",
+    description:
+      "Talk to Parseable from your AI client. Query logs (SQL + PromQL), manage alerts, audit RBAC.",
+    websiteUrl: "https://www.parseable.com",
+    icons: [
+      {
+        src: PARSEABLE_ICON_DATA_URI,
+        mimeType: "image/svg+xml",
+        sizes: ["any"],
+      },
+    ],
   });
 
   for (const tool of tools) {

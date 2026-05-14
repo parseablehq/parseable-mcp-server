@@ -90,11 +90,11 @@ describe("getClientTargets", () => {
 describe("mergeConfig", () => {
   const creds = { url: "http://x", username: "a", password: "b" };
 
-  it("adds parseable entry under mcpServers", () => {
+  it("adds Parseable entry under mcpServers", () => {
     const merged = mergeConfig({}, "mcpServers", creds);
     expect(merged).toEqual({
       mcpServers: {
-        parseable: {
+        Parseable: {
           command: "npx",
           args: ["-y", "@parseable/parseable-mcp-server"],
           env: {
@@ -107,7 +107,7 @@ describe("mergeConfig", () => {
     });
   });
 
-  it("adds parseable entry under servers for VS Code", () => {
+  it("adds Parseable entry under servers for VS Code", () => {
     const merged = mergeConfig({}, "servers", creds);
     expect(merged.servers).toBeDefined();
     expect(merged.mcpServers).toBeUndefined();
@@ -130,17 +130,17 @@ describe("mergeConfig", () => {
     );
     const servers = merged.mcpServers as Record<string, unknown>;
     expect(servers.github).toEqual({ command: "node", args: ["x.js"] });
-    expect(servers.parseable).toBeDefined();
+    expect(servers.Parseable).toBeDefined();
   });
 
-  it("overwrites an existing parseable entry", () => {
+  it("overwrites an existing Parseable entry", () => {
     const merged = mergeConfig(
-      { mcpServers: { parseable: { command: "node", args: ["old.js"] } } },
+      { mcpServers: { Parseable: { command: "node", args: ["old.js"] } } },
       "mcpServers",
       { url: "http://new", username: "a", password: "b" },
     );
     const servers = merged.mcpServers as Record<string, unknown>;
-    const parseable = servers.parseable as { env: Record<string, string> };
+    const parseable = servers.Parseable as { env: Record<string, string> };
     expect(parseable.env.PARSEABLE_URL).toBe("http://new");
   });
 });

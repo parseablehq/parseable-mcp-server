@@ -1,6 +1,6 @@
 {
   "name": "@parseable/parseable-mcp-server",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
   "license": "Apache-2.0",
   "type": "module",

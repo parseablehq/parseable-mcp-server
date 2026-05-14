@@ -141,7 +141,7 @@ Manual config — only needed if [Quickstart](#quickstart) doesn't cover your cl
 ```json
 {
   "mcpServers": {
-    "parseable": {
+    "Parseable": {
       "command": "npx",
       "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
@@ -159,7 +159,7 @@ Restart Claude Desktop. Tools appear under the hammer icon.
 ### Claude Code
 
 ```bash
-claude mcp add parseable \
+claude mcp add Parseable \
   --env PARSEABLE_URL=https://your-parseable.example.com \
   --env PARSEABLE_USERNAME=admin \
   --env PARSEABLE_PASSWORD=your-password \
@@ -175,7 +175,7 @@ Verify with `claude mcp list`.
 ```json
 {
   "mcpServers": {
-    "parseable": {
+    "Parseable": {
       "command": "npx",
       "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
@@ -195,11 +195,11 @@ Reload Cursor. Tools surface in chat.
 `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.parseable]
+[mcp_servers.Parseable]
 command = "npx"
 args = ["-y", "@parseable/parseable-mcp-server"]
 
-[mcp_servers.parseable.env]
+[mcp_servers.Parseable.env]
 PARSEABLE_URL = "https://your-parseable.example.com"
 PARSEABLE_USERNAME = "admin"
 PARSEABLE_PASSWORD = "your-password"
@@ -212,7 +212,7 @@ PARSEABLE_PASSWORD = "your-password"
 ```json
 {
   "servers": {
-    "parseable": {
+    "Parseable": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "@parseable/parseable-mcp-server"],
