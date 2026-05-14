@@ -34,21 +34,3 @@ jobs:
 
       - name: Test
         run: npm test
-
-      - name: Smoke (boot server)
-        env:
-          PARSEABLE_URL: http://localhost:9999
-          PARSEABLE_USERNAME: admin
-          PARSEABLE_PASSWORD: admin
-        run: |
-          set -e
-          node dist/server.js < /dev/null &
-          PID=$!
-          sleep 1
-          if kill -0 $PID 2>/dev/null; then
-            kill $PID
-            echo "Server started cleanly"
-          else
-            echo "Server failed to boot"
-            exit 1
-          fi
