@@ -1,0 +1,42 @@
+{
+  "name": "@parseable/mcp-server",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
+  "license": "AGPL-3.0",
+  "type": "module",
+  "bin": {
+    "parseable-mcp-server": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check src test",
+    "format": "biome format --write src test",
+    "fix": "biome check --write src test",
+    "prepublishOnly": "npm run build && npm run lint && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.1.6",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.6"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
