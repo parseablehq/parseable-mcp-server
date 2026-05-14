@@ -146,7 +146,7 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
   } else {
     const { application } = await inquirer.prompt<{ application: string }>([
       {
-        type: "list",
+        type: "select",
         name: "application",
         message: "Select Application:",
         choices: all.map((t) => ({ name: t.name, value: t.id })),
