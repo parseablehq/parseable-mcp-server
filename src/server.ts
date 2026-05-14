@@ -7,6 +7,12 @@ import { tools } from "./tools/index.js";
 import { errorResult, jsonResult } from "./tools/types.js";
 
 async function main() {
+  if (process.argv[2] === "init") {
+    const { runInit } = await import("./init.js");
+    await runInit();
+    return;
+  }
+
   const config = loadConfig();
   const client = new ParseableClient(config);
   const ctx = { client, config };

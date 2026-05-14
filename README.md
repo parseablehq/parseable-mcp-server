@@ -2,7 +2,29 @@
 
 Model Context Protocol server for [Parseable](https://www.parseable.com). Lets any MCP-capable client (Claude Desktop, Claude Code, Cursor, Codex, VS Code Copilot, Continue, Windsurf, Cline, Zed) discover, query, and manage Parseable datasets and alerts.
 
-> **Status:** v0.4 — 27 tools across discovery, query (SQL + PromQL), alerts, alert targets, diagnostics, RBAC (read-only), and admin (read-only). Tools-only over stdio for maximum cross-client compatibility.
+> **Status:** v0.2 — 27 tools across discovery, query (SQL + PromQL), alerts, alert targets, diagnostics, RBAC (read-only), and admin (read-only). Tools-only over stdio for maximum cross-client compatibility.
+
+## Quickstart
+
+One command, interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
+
+```bash
+npx -y @parseable/parseable-mcp-server init
+```
+
+Restart your MCP client. Tools appear. Skip the rest of this README unless you want to configure manually.
+
+For scripted / non-interactive setup:
+
+```bash
+npx -y @parseable/parseable-mcp-server init \
+  --client claude-desktop \
+  --url https://your-parseable.example.com \
+  --username admin \
+  --password "$PARSEABLE_PASSWORD"
+```
+
+Supported `--client` values: `claude-desktop`, `cursor`. Existing config files are backed up as `<config>.bak` before being modified. Other `mcpServers` entries are preserved.
 
 ## Tools
 
@@ -76,11 +98,7 @@ Inspect cluster health and dataset lifecycle. **No tools for mutating cluster st
 
 ## Install
 
-No install step — every MCP client invokes the server via `npx`, which fetches it on demand:
-
-```
-npx -y @parseable/parseable-mcp-server
-```
+No install step — every MCP client invokes the server via `npx`, which fetches it on demand. The [Quickstart](#quickstart) above wires it into Claude Desktop / Cursor automatically. Skip ahead to **Client setup** below if you prefer manual config.
 
 For local development (hacking on the server itself):
 
@@ -107,7 +125,7 @@ All configuration via environment variables (set in your MCP client's config fil
 
 ## Client setup
 
-The command and args are the same for every client — only the config file location and syntax differ.
+Manual config — only needed if [Quickstart](#quickstart) doesn't cover your client (Claude Code, Codex, VS Code, Windsurf, Continue, Cline, Zed). The command and args are the same for every client — only the config file location and syntax differ.
 
 ### Claude Desktop
 
