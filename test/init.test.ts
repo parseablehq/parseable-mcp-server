@@ -35,36 +35,63 @@ describe("parseInitArgs", () => {
 });
 
 describe("getClientTargets", () => {
-  it("returns Claude Desktop + Cursor on macOS", () => {
+  it("returns 5 clients on macOS", () => {
     const t = getClientTargets("/home/user", "darwin");
-    expect(t).toHaveLength(2);
-    expect(t[0].id).toBe("claude-desktop");
-    expect(t[0].configPath).toContain("Library/Application Support/Claude");
-    expect(t[1].id).toBe("cursor");
-    expect(t[1].configPath).toBe("/home/user/.cursor/mcp.json");
+    expect(t.map((c) => c.id)).toEqual([
+      "claude-code",
+      "claude-desktop",
+      "cursor",
+      "vscode",
+      "vscode-insiders",
+    ]);
   });
 
-  it("uses APPDATA path shape on Windows", () => {
-    const t = getClientTargets("C:\\Users\\u", "win32");
-    expect(t[0].configPath).toMatch(/Claude/);
+  it("uses Library/Application Support paths on macOS", () => {
+    const t = getClientTargets("/home/user", "darwin");
+    expect(t.find((c) => c.id === "claude-desktop")?.configPath).toContain(
+      "Library/Application Support/Claude",
+    );
+    expect(t.find((c) => c.id === "vscode")?.configPath).toContain(
+      "Library/Application Support/Code/User",
+    );
+    expect(t.find((c) => c.id === "vscode-insiders")?.configPath).toContain(
+      "Library/Application Support/Code - Insiders/User",
+    );
   });
 
   it("uses ~/.config on Linux", () => {
     const t = getClientTargets("/home/u", "linux");
-    expect(t[0].configPath).toBe("/home/u/.config/Claude/claude_desktop_config.json");
+    expect(t.find((c) => c.id === "claude-desktop")?.configPath).toBe(
+      "/home/u/.config/Claude/claude_desktop_config.json",
+    );
+    expect(t.find((c) => c.id === "vscode")?.configPath).toBe("/home/u/.config/Code/User/mcp.json");
+  });
+
+  it("uses APPDATA shape on Windows", () => {
+    const t = getClientTargets("C:\\Users\\u", "win32");
+    expect(t.find((c) => c.id === "vscode")?.configPath).toMatch(/Code/);
+  });
+
+  it("Claude Code lives at ~/.claude.json", () => {
+    const t = getClientTargets("/home/u", "darwin");
+    expect(t.find((c) => c.id === "claude-code")?.configPath).toBe("/home/u/.claude.json");
+  });
+
+  it("VS Code variants use 'servers' key, others use 'mcpServers'", () => {
+    const t = getClientTargets("/home/u", "darwin");
+    expect(t.find((c) => c.id === "claude-desktop")?.configKey).toBe("mcpServers");
+    expect(t.find((c) => c.id === "cursor")?.configKey).toBe("mcpServers");
+    expect(t.find((c) => c.id === "claude-code")?.configKey).toBe("mcpServers");
+    expect(t.find((c) => c.id === "vscode")?.configKey).toBe("servers");
+    expect(t.find((c) => c.id === "vscode-insiders")?.configKey).toBe("servers");
   });
 });
 
 describe("mergeConfig", () => {
-  it("adds parseable entry to empty config", () => {
-    const merged = mergeConfig(
-      {},
-      {
-        url: "http://x",
-        username: "a",
-        password: "b",
-      },
-    );
+  const creds = { url: "http://x", username: "a", password: "b" };
+
+  it("adds parseable entry under mcpServers", () => {
+    const merged = mergeConfig({}, "mcpServers", creds);
     expect(merged).toEqual({
       mcpServers: {
         parseable: {
@@ -80,26 +107,26 @@ describe("mergeConfig", () => {
     });
   });
 
+  it("adds parseable entry under servers for VS Code", () => {
+    const merged = mergeConfig({}, "servers", creds);
+    expect(merged.servers).toBeDefined();
+    expect(merged.mcpServers).toBeUndefined();
+  });
+
   it("preserves other top-level keys", () => {
     const merged = mergeConfig(
-      {
-        mcpServers: {},
-        preferences: { theme: "dark" },
-      },
-      { url: "http://x", username: "a", password: "b" },
+      { mcpServers: {}, preferences: { theme: "dark" } },
+      "mcpServers",
+      creds,
     );
     expect(merged.preferences).toEqual({ theme: "dark" });
-    expect((merged.mcpServers as Record<string, unknown>).parseable).toBeDefined();
   });
 
   it("preserves other mcpServers entries", () => {
     const merged = mergeConfig(
-      {
-        mcpServers: {
-          github: { command: "node", args: ["x.js"] },
-        },
-      },
-      { url: "http://x", username: "a", password: "b" },
+      { mcpServers: { github: { command: "node", args: ["x.js"] } } },
+      "mcpServers",
+      creds,
     );
     const servers = merged.mcpServers as Record<string, unknown>;
     expect(servers.github).toEqual({ command: "node", args: ["x.js"] });
@@ -108,11 +135,8 @@ describe("mergeConfig", () => {
 
   it("overwrites an existing parseable entry", () => {
     const merged = mergeConfig(
-      {
-        mcpServers: {
-          parseable: { command: "node", args: ["old.js"] },
-        },
-      },
+      { mcpServers: { parseable: { command: "node", args: ["old.js"] } } },
+      "mcpServers",
       { url: "http://new", username: "a", password: "b" },
     );
     const servers = merged.mcpServers as Record<string, unknown>;

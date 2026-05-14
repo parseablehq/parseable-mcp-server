@@ -1,13 +1,13 @@
-import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
-import { createInterface, type Interface } from "node:readline/promises";
+import inquirer from "inquirer";
 
 export interface ClientTarget {
   id: string;
   name: string;
   configPath: string;
+  configKey: "mcpServers" | "servers";
 }
 
 export interface InitArgs {
@@ -21,27 +21,52 @@ export function getClientTargets(
   home: string = homedir(),
   plat: string = platform(),
 ): ClientTarget[] {
-  const targets: ClientTarget[] = [];
+  const claudeDesktopPath =
+    plat === "darwin"
+      ? join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+      : plat === "win32"
+        ? join(process.env.APPDATA ?? home, "Claude", "claude_desktop_config.json")
+        : join(home, ".config", "Claude", "claude_desktop_config.json");
 
-  let claudePath: string;
-  if (plat === "darwin") {
-    claudePath = join(
-      home,
-      "Library",
-      "Application Support",
-      "Claude",
-      "claude_desktop_config.json",
-    );
-  } else if (plat === "win32") {
-    claudePath = join(process.env.APPDATA ?? home, "Claude", "claude_desktop_config.json");
-  } else {
-    claudePath = join(home, ".config", "Claude", "claude_desktop_config.json");
-  }
-  targets.push({ id: "claude-desktop", name: "Claude Desktop", configPath: claudePath });
+  const vscodeBaseDir = (variant: "Code" | "Code - Insiders") =>
+    plat === "darwin"
+      ? join(home, "Library", "Application Support", variant, "User", "mcp.json")
+      : plat === "win32"
+        ? join(process.env.APPDATA ?? home, variant, "User", "mcp.json")
+        : join(home, ".config", variant, "User", "mcp.json");
 
-  targets.push({ id: "cursor", name: "Cursor", configPath: join(home, ".cursor", "mcp.json") });
-
-  return targets;
+  return [
+    {
+      id: "claude-code",
+      name: "Claude Code",
+      configPath: join(home, ".claude.json"),
+      configKey: "mcpServers",
+    },
+    {
+      id: "claude-desktop",
+      name: "Claude for Desktop",
+      configPath: claudeDesktopPath,
+      configKey: "mcpServers",
+    },
+    {
+      id: "cursor",
+      name: "Cursor",
+      configPath: join(home, ".cursor", "mcp.json"),
+      configKey: "mcpServers",
+    },
+    {
+      id: "vscode",
+      name: "VS Code",
+      configPath: vscodeBaseDir("Code"),
+      configKey: "servers",
+    },
+    {
+      id: "vscode-insiders",
+      name: "VS Code Insiders",
+      configPath: vscodeBaseDir("Code - Insiders"),
+      configKey: "servers",
+    },
+  ];
 }
 
 export function parseInitArgs(argv: string[]): InitArgs {
@@ -58,6 +83,7 @@ export function parseInitArgs(argv: string[]): InitArgs {
 
 export function mergeConfig(
   existing: Record<string, unknown>,
+  configKey: "mcpServers" | "servers",
   creds: { url: string; username: string; password: string },
 ): Record<string, unknown> {
   const entry = {
@@ -70,113 +96,114 @@ export function mergeConfig(
     },
   };
 
-  const servers = (existing.mcpServers as Record<string, unknown>) ?? {};
+  const servers = (existing[configKey] as Record<string, unknown>) ?? {};
   servers.parseable = entry;
-  return { ...existing, mcpServers: servers };
+  return { ...existing, [configKey]: servers };
 }
 
-async function writeClientConfig(
+function writeClientConfig(
   target: ClientTarget,
   creds: { url: string; username: string; password: string },
-): Promise<void> {
+): void {
   let existing: Record<string, unknown> = {};
   if (existsSync(target.configPath)) {
-    const raw = await readFile(target.configPath, "utf8");
-    if (raw.trim()) {
-      try {
+    try {
+      copyFileSync(target.configPath, `${target.configPath}.bak`);
+      const raw = readFileSync(target.configPath, "utf8");
+      if (raw.trim()) {
         existing = JSON.parse(raw);
-      } catch {
-        throw new Error(
-          `Existing config at ${target.configPath} is not valid JSON. Refusing to overwrite.`,
-        );
       }
+    } catch {
+      console.warn(
+        `Warning: existing config at ${target.configPath} is not valid JSON. Backed up and replacing.`,
+      );
     }
-    await writeFile(`${target.configPath}.bak`, raw, "utf8");
   } else {
-    await mkdir(dirname(target.configPath), { recursive: true });
+    mkdirSync(dirname(target.configPath), { recursive: true });
   }
 
-  const merged = mergeConfig(existing, creds);
-  await writeFile(target.configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
-}
-
-async function ask(rl: Interface, question: string, fallback?: string): Promise<string> {
-  const q = fallback ? `${question} [${fallback}]: ` : `${question}: `;
-  const answer = (await rl.question(q)).trim();
-  return answer || fallback || "";
+  const merged = mergeConfig(existing, target.configKey, creds);
+  writeFileSync(target.configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 }
 
 export async function runInit(argv: string[] = process.argv.slice(3)): Promise<void> {
   const args = parseInitArgs(argv);
+  const all = getClientTargets();
 
   console.log("Parseable MCP server — interactive setup\n");
 
-  const all = getClientTargets();
-  const detected = all.filter((t) => existsSync(t.configPath));
-
-  if (detected.length === 0) {
-    console.log(
-      "No MCP clients detected yet. Creating config files for both Claude Desktop and Cursor.",
-    );
-    console.log("If you only use one, you can delete the other later.\n");
-  } else {
-    console.log("Detected MCP clients:");
-    for (const [i, t] of detected.entries()) {
-      console.log(`  ${i + 1}. ${t.name} (${t.configPath})`);
-    }
-    console.log();
-  }
-
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-
-  let chosen: ClientTarget[];
+  // 1. Application
+  let selectedTarget: ClientTarget;
   if (args.client) {
     const match = all.find((t) => t.id === args.client);
     if (!match) {
-      rl.close();
       console.error(
         `Unknown client "${args.client}". Use one of: ${all.map((t) => t.id).join(", ")}`,
       );
       process.exit(1);
     }
-    chosen = [match];
-  } else if (detected.length === 0) {
-    chosen = all;
+    selectedTarget = match;
   } else {
-    const pick = await ask(rl, "Configure which? (comma-separated numbers, or 'all')", "all");
-    if (pick === "all") {
-      chosen = detected;
-    } else {
-      const indices = pick.split(",").map((s) => Number.parseInt(s.trim(), 10) - 1);
-      chosen = indices.map((i) => detected[i]).filter(Boolean);
+    const { application } = await inquirer.prompt<{ application: string }>([
+      {
+        type: "list",
+        name: "application",
+        message: "Select Application:",
+        choices: all.map((t) => ({ name: t.name, value: t.id })),
+      },
+    ]);
+    const match = all.find((t) => t.id === application);
+    if (!match) {
+      console.error("No application selected. Aborting.");
+      process.exit(1);
     }
+    selectedTarget = match;
   }
 
-  if (chosen.length === 0) {
-    rl.close();
-    console.error("No clients selected. Aborting.");
+  // 2. Credentials
+  const answers = await inquirer.prompt<{
+    url: string;
+    username: string;
+    password: string;
+  }>(
+    [
+      !args.url && {
+        type: "input",
+        name: "url",
+        message: "Parseable URL:",
+        validate: (v: string) => v.trim().length > 0 || "URL is required",
+      },
+      !args.username && {
+        type: "input",
+        name: "username",
+        message: "Username:",
+        default: "admin",
+      },
+      !args.password && {
+        type: "password",
+        name: "password",
+        message: "Password:",
+        mask: "*",
+        validate: (v: string) => v.length > 0 || "Password is required",
+      },
+    ].filter(Boolean) as Parameters<typeof inquirer.prompt>[0],
+  );
+
+  const creds = {
+    url: args.url ?? answers.url,
+    username: args.username ?? answers.username,
+    password: args.password ?? answers.password,
+  };
+
+  // 3. Write
+  try {
+    writeClientConfig(selectedTarget, creds);
+    console.log(
+      `\n✓ Configuration saved to ${selectedTarget.configPath} for ${selectedTarget.name}`,
+    );
+    console.log(`Restart ${selectedTarget.name} to load 27 Parseable tools.`);
+  } catch (err) {
+    console.error(`✗ Failed to write config: ${(err as Error).message}`);
     process.exit(1);
   }
-
-  const url = args.url || (await ask(rl, "Parseable URL"));
-  const username = args.username || (await ask(rl, "Username", "admin"));
-  const password = args.password || (await ask(rl, "Password"));
-
-  rl.close();
-
-  if (!url || !username || !password) {
-    console.error("URL, username, and password are all required.");
-    process.exit(1);
-  }
-
-  for (const target of chosen) {
-    try {
-      await writeClientConfig(target, { url, username, password });
-      console.log(`✓ Configured ${target.name}: ${target.configPath}`);
-    } catch (err) {
-      console.error(`✗ Failed to configure ${target.name}: ${(err as Error).message}`);
-    }
-  }
-
-  console.log(`\nRestart ${chosen.map((t) => t.name).join(" / ")} to load 27 Parseable tools.`);
 }
