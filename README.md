@@ -76,11 +76,20 @@ Inspect cluster health and dataset lifecycle. **No tools for mutating cluster st
 
 ## Install
 
+No install step — every MCP client invokes the server via `npx`, which fetches it on demand:
+
+```
+npx -y @parseable/parseable-mcp-server
+```
+
+For local development (hacking on the server itself):
+
 ```bash
 git clone https://github.com/parseablehq/parseable-mcp-server.git
 cd parseable-mcp-server
 npm install
 npm run build
+node dist/server.js
 ```
 
 ## Configure
@@ -98,7 +107,7 @@ All configuration via environment variables (set in your MCP client's config fil
 
 ## Client setup
 
-The command and args are the same for every client — only the config file location and syntax differ. Replace `/ABS/PATH` with the absolute path to this repo.
+The command and args are the same for every client — only the config file location and syntax differ.
 
 ### Claude Desktop
 
@@ -108,8 +117,8 @@ The command and args are the same for every client — only the config file loca
 {
   "mcpServers": {
     "parseable": {
-      "command": "node",
-      "args": ["/ABS/PATH/parseable-mcp-server/dist/server.js"],
+      "command": "npx",
+      "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
         "PARSEABLE_USERNAME": "admin",
@@ -129,7 +138,7 @@ claude mcp add parseable \
   --env PARSEABLE_URL=https://your-parseable.example.com \
   --env PARSEABLE_USERNAME=admin \
   --env PARSEABLE_PASSWORD=your-password \
-  -- node /ABS/PATH/parseable-mcp-server/dist/server.js
+  -- npx -y @parseable/parseable-mcp-server
 ```
 
 Verify with `claude mcp list`.
@@ -142,8 +151,8 @@ Verify with `claude mcp list`.
 {
   "mcpServers": {
     "parseable": {
-      "command": "node",
-      "args": ["/ABS/PATH/parseable-mcp-server/dist/server.js"],
+      "command": "npx",
+      "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
         "PARSEABLE_USERNAME": "admin",
@@ -162,8 +171,8 @@ Reload Cursor. Tools surface in chat.
 
 ```toml
 [mcp_servers.parseable]
-command = "node"
-args = ["/ABS/PATH/parseable-mcp-server/dist/server.js"]
+command = "npx"
+args = ["-y", "@parseable/parseable-mcp-server"]
 
 [mcp_servers.parseable.env]
 PARSEABLE_URL = "https://your-parseable.example.com"
@@ -180,8 +189,8 @@ PARSEABLE_PASSWORD = "your-password"
   "servers": {
     "parseable": {
       "type": "stdio",
-      "command": "node",
-      "args": ["/ABS/PATH/parseable-mcp-server/dist/server.js"],
+      "command": "npx",
+      "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
         "PARSEABLE_USERNAME": "admin",
