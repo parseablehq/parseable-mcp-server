@@ -230,7 +230,7 @@ npm run fix          # biome auto-fix + format
 npm run format       # biome format only
 ```
 
-CI (GitHub Actions) runs lint + build + test + boot-smoke on every push and PR to `main`, across Node 18 / 20 / 22.
+CI (GitHub Actions) runs lint + build + test on every push and PR to `main`, on Node 20.
 
 ## Alert creation flow
 

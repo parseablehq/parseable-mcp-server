@@ -99,7 +99,7 @@ Current: **95% statements / 98% functions / 95% lines / 108 tests**.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on push + PR to main: `npm ci` → `npm run lint` → `npm run build` → `npm test` → boot smoke. Node 18 / 20 / 22 matrix.
+`.github/workflows/ci.yml` runs on push + PR to main: `npm ci` → `npm run lint` → `npm run build` → `npm test`. Node 20.
 
 ## Deliberately excluded — won't be accepted
 
