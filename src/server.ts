@@ -21,7 +21,7 @@ async function main() {
   const server = new McpServer({
     name: "parseable-mcp-server",
     title: "Parseable",
-    version: "0.2.3",
+    version: "0.2.4",
     description:
       "Talk to Parseable from your AI client. Query logs (SQL + PromQL), manage alerts, audit RBAC.",
     websiteUrl: "https://www.parseable.com",
