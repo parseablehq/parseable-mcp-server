@@ -1,5 +1,19 @@
 import type { Config } from "./config.js";
 
+export interface ClerkAuthOptions {
+  url: string;
+  workspaceId: string;
+  clerkSessionToken: string;
+  maxRows: number;
+  queryTimeoutMs: number;
+}
+
+export type ClientOptions = Config | ClerkAuthOptions;
+
+function isClerkOptions(opts: ClientOptions): opts is ClerkAuthOptions {
+  return "clerkSessionToken" in opts && typeof opts.clerkSessionToken === "string";
+}
+
 export class ParseableError extends Error {
   constructor(
     public status: number,
@@ -57,11 +71,67 @@ export function classifyStatus(status: number, _method: string, path: string): s
 }
 
 export class ParseableClient {
-  private authHeader: string;
+  private authHeader?: string;
+  private clerkSessionToken?: string;
+  private workspaceId?: string;
+  private cookies?: string;
+  private url: string;
+  private queryTimeoutMs: number;
+  public readonly maxRows: number;
 
-  constructor(private config: Config) {
-    const token = Buffer.from(`${config.username}:${config.password}`).toString("base64");
-    this.authHeader = `Basic ${token}`;
+  constructor(opts: ClientOptions) {
+    this.url = opts.url.replace(/\/+$/, "");
+    this.queryTimeoutMs = opts.queryTimeoutMs;
+    this.maxRows = opts.maxRows;
+    if (isClerkOptions(opts)) {
+      this.clerkSessionToken = opts.clerkSessionToken;
+      this.workspaceId = opts.workspaceId;
+    } else {
+      const token = Buffer.from(`${opts.username}:${opts.password}`).toString("base64");
+      this.authHeader = `Basic ${token}`;
+    }
+  }
+
+  private async ensureClerkBootstrap(): Promise<void> {
+    if (!this.clerkSessionToken) return;
+    if (this.cookies) return;
+    const codeUrl = `${this.url}/api/v1/o/code?code=${encodeURIComponent(this.clerkSessionToken)}&state=${encodeURIComponent(this.url)}`;
+    const res = await fetch(codeUrl, {
+      method: "GET",
+      headers: {
+        "X-CLERK-SESSION-TOKEN": this.clerkSessionToken,
+        ...(this.workspaceId ? { "x-p-tenant": this.workspaceId } : {}),
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ParseableError(
+        res.status,
+        text,
+        `Parseable /o/code bootstrap failed: ${res.status} ${res.statusText}\n${text.slice(0, 300)}`,
+      );
+    }
+    const setCookie = res.headers.get("set-cookie");
+    if (!setCookie) {
+      throw new Error("Parseable /o/code returned no Set-Cookie header");
+    }
+    // Keep only name=value pairs; drop attributes like Path/HttpOnly/Expires.
+    this.cookies = setCookie
+      .split(/,(?=[^;]+?=)/)
+      .map((c) => c.trim().split(";")[0])
+      .filter(Boolean)
+      .join("; ");
+  }
+
+  private async authHeaders(): Promise<Record<string, string>> {
+    if (this.authHeader) return { Authorization: this.authHeader };
+    await this.ensureClerkBootstrap();
+    return {
+      "X-CLERK-SESSION-TOKEN": this.clerkSessionToken as string,
+      Cookie: this.cookies ?? "",
+      ...(this.workspaceId ? { "x-p-tenant": this.workspaceId } : {}),
+    };
   }
 
   private async request<T>(
@@ -72,15 +142,16 @@ export class ParseableClient {
   ): Promise<T> {
     const base = opts.basePath ?? "/api/v1";
     const qs = opts.query ? `?${new URLSearchParams(opts.query).toString()}` : "";
-    const url = `${this.config.url}${base}${path}${qs}`;
+    const url = `${this.url}${base}${path}${qs}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.config.queryTimeoutMs);
+    const timeout = setTimeout(() => controller.abort(), this.queryTimeoutMs);
 
     try {
+      const auth = await this.authHeaders();
       const res = await fetch(url, {
         method,
         headers: {
-          Authorization: this.authHeader,
+          ...auth,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -107,22 +178,22 @@ export class ParseableClient {
       if (err instanceof ParseableError) throw err;
       if ((err as Error).name === "AbortError") {
         throw new Error(
-          `Parseable request timed out after ${this.config.queryTimeoutMs}ms: ${method} ${path}. Try a shorter time window or raise PARSEABLE_QUERY_TIMEOUT_MS.`,
+          `Parseable request timed out after ${this.queryTimeoutMs}ms: ${method} ${path}. Try a shorter time window or raise PARSEABLE_QUERY_TIMEOUT_MS.`,
         );
       }
       const e = err as NodeJS.ErrnoException & { cause?: { code?: string } };
       const code = e.code ?? e.cause?.code;
       if (code === "ECONNREFUSED") {
         throw new Error(
-          `Connection refused to ${this.config.url}. Is Parseable running and reachable from this machine?`,
+          `Connection refused to ${this.url}. Is Parseable running and reachable from this machine?`,
         );
       }
       if (code === "ENOTFOUND") {
-        throw new Error(`DNS lookup failed for ${this.config.url}. Check PARSEABLE_URL.`);
+        throw new Error(`DNS lookup failed for ${this.url}. Check PARSEABLE_URL.`);
       }
       if (code === "CERT_HAS_EXPIRED" || code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") {
         throw new Error(
-          `TLS certificate problem talking to ${this.config.url}: ${code}. Use a trusted cert or http:// for local testing.`,
+          `TLS certificate problem talking to ${this.url}: ${code}. Use a trusted cert or http:// for local testing.`,
         );
       }
       throw err;

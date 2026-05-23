@@ -1,0 +1,22 @@
+services:
+  parseable-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: parseable-mcp:local
+    container_name: parseable-mcp
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env.docker
+    environment:
+      PORT: "8787"
+      NODE_ENV: production
+      MCP_PUBLIC_BASE_URL: "http://localhost:8787"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

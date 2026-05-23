@@ -112,12 +112,11 @@ describe("ParseableClient request behavior", () => {
       ...baseConfig,
       url: "http://example.test:8000///",
     });
-    // public surface: verify URL via fetch call
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValue(new Response("[]", { status: 200 }));
     return client.listDatasets().then(() => {
       const call = fetchMock.mock.calls[0];
-      expect(call[0]).toMatch(/^http:\/\/example\.test:8000\/\/\//);
+      expect(call[0]).toBe("http://example.test:8000/api/v1/logstream");
     });
   });
 

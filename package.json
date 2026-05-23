@@ -13,7 +13,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/server.js",
     "dev": "tsc --watch",
     "start": "node dist/server.js",
     "test": "vitest run",
@@ -25,9 +25,13 @@
     "prepublishOnly": "npm run build && npm run lint && npm test"
   },
   "dependencies": {
+    "@clerk/backend": "^3.4.9",
+    "@hono/node-server": "^2.0.2",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^16.4.5",
+    "hono": "^4.12.19",
     "inquirer": "^13.4.3",
+    "jose": "^6.2.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
