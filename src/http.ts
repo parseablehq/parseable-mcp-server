@@ -13,10 +13,18 @@ const DEFAULT_QUERY_TIMEOUT_MS = 30_000;
 
 export const app = new Hono();
 
+app.onError((err, c) => {
+  console.error("[mcp] unhandled error", err);
+  const message = err instanceof Error ? err.message : String(err);
+  return c.json({ error: "server_error", error_description: message }, 500);
+});
+
 app.use("/*", async (c, next) => {
   const t0 = Date.now();
   await next();
-  console.error(`[mcp] ${c.req.method} ${c.req.path}${c.req.url.includes("?") ? "?" + c.req.url.split("?")[1] : ""} -> ${c.res.status} (${Date.now() - t0}ms)`);
+  console.error(
+    `[mcp] ${c.req.method} ${c.req.path}${c.req.url.includes("?") ? "?" + c.req.url.split("?")[1] : ""} -> ${c.res.status} (${Date.now() - t0}ms)`,
+  );
 });
 
 app.get("/health", (c) => c.text("ok"));
@@ -32,7 +40,9 @@ app.use("/*", async (c, next) => {
     const { renderSsoCallbackPage } = await import("./ui/login.js");
     const { getClerkConfig } = await import("./oauth/clerk.js");
     const { publishableKey } = getClerkConfig();
-    const publicBaseUrl = (process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787").replace(/\/+$/, "");
+    const publicBaseUrl = (
+      process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787"
+    ).replace(/\/+$/, "");
     return c.html(renderSsoCallbackPage({ publishableKey, publicBaseUrl }));
   }
   return next();
@@ -89,7 +99,9 @@ function buildBasicClient(reqHeaders: Headers): {
 } {
   const creds = parseAuthHeaders(reqHeaders);
   assertNotPrivateUrl(creds.url);
-  const maxRows = Number(reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS);
+  const maxRows = Number(
+    reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS,
+  );
   const queryTimeoutMs = Number(
     reqHeaders.get("X-Parseable-Query-Timeout-Ms") ?? DEFAULT_QUERY_TIMEOUT_MS,
   );
@@ -109,7 +121,9 @@ app.post("/mcp", async (c) => {
       .header("authorization")
       ?.replace(/^Bearer\s+/i, "")
       .trim();
-    const built = bearer ? await buildClerkClient(bearer) : buildBasicClient(c.req.raw.headers);
+    const built = bearer
+      ? await buildClerkClient(bearer)
+      : buildBasicClient(c.req.raw.headers);
 
     const mcp = buildMcpServer({ client: built.client, config: built.config });
 
