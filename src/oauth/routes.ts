@@ -1,5 +1,9 @@
 import { Hono } from "hono";
-import { renderLoginPage, renderPostAuthPage, renderSsoCallbackPage } from "../ui/login.js";
+import {
+  renderLoginPage,
+  renderPostAuthPage,
+  renderSsoCallbackPage,
+} from "../ui/login.js";
 import { renderNoWorkspace, renderWorkspacePicker } from "../ui/picker.js";
 import { getClerkConfig, verifyClerkSessionJwt } from "./clerk.js";
 import {
@@ -14,18 +18,24 @@ import { getOrganization, OrchestratorError } from "./orchestrator.js";
 export const oauth = new Hono();
 
 function getPublicBase(): string {
-  return (process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787").replace(/\/+$/, "");
+  return (process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787").replace(
+    /\/+$/,
+    "",
+  );
 }
 
 function readClerkSessionCookie(cookieHeader: string): string | undefined {
-  return cookieHeader
-    .split(";")
-    .map((p) => p.trim())
-    .map((p) => {
-      const i = p.indexOf("=");
-      return i < 0 ? ["", ""] : [p.slice(0, i), p.slice(i + 1)];
-    })
-    .find(([k]) => k === "__session")?.[1];
+  const cookies = cookieHeader.split(";").map((p) => p.trim());
+  for (const c of cookies) {
+    const eq = c.indexOf("=");
+    if (eq < 0) continue;
+    const key = c.slice(0, eq);
+    // Dev instances use "__session"; prod instances use "__session_<instanceId>".
+    if (key === "__session" || key.startsWith("__session_")) {
+      return c.slice(eq + 1);
+    }
+  }
+  return undefined;
 }
 
 oauth.get("/.well-known/oauth-authorization-server", (c) => {
@@ -46,8 +56,13 @@ oauth.get("/.well-known/oauth-authorization-server", (c) => {
 oauth.post("/oauth/register", async (c) => {
   // Dynamic Client Registration (RFC 7591) — stub: every client gets a generated id.
   // We rely on PKCE + redirect_uri whitelist (caller's own URI) for actual security.
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-  const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
+  const body = (await c.req.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  const redirectUris = Array.isArray(body.redirect_uris)
+    ? body.redirect_uris
+    : [];
   const clientId = `mcp-client-${crypto.randomUUID()}`;
   return c.json(
     {
@@ -74,7 +89,10 @@ oauth.get("/oauth/authorize", async (c) => {
     return c.json({ error: "unsupported_response_type" }, 400);
   }
   if (!redirectUri) {
-    return c.json({ error: "invalid_request", error_description: "redirect_uri required" }, 400);
+    return c.json(
+      { error: "invalid_request", error_description: "redirect_uri required" },
+      400,
+    );
   }
 
   const flowToken = await signFlowToken({
@@ -92,7 +110,10 @@ oauth.get("/oauth/authorize", async (c) => {
 oauth.get("/login", (c) => {
   const flowToken = c.req.query("flow_token");
   if (!flowToken) {
-    return c.json({ error: "invalid_request", error_description: "flow_token required" }, 400);
+    return c.json(
+      { error: "invalid_request", error_description: "flow_token required" },
+      400,
+    );
   }
   const { publishableKey } = getClerkConfig();
   const html = renderLoginPage({
@@ -122,7 +143,9 @@ oauth.get("/signin", (c) => {
 
 oauth.get("/sso-callback", (c) => {
   const { publishableKey } = getClerkConfig();
-  return c.html(renderSsoCallbackPage({ publishableKey, publicBaseUrl: getPublicBase() }));
+  return c.html(
+    renderSsoCallbackPage({ publishableKey, publicBaseUrl: getPublicBase() }),
+  );
 });
 
 oauth.get("/post-auth", (c) => {
@@ -132,14 +155,20 @@ oauth.get("/post-auth", (c) => {
 oauth.get("/oauth/callback", async (c) => {
   const flowToken = c.req.query("flow_token");
   if (!flowToken) {
-    return c.json({ error: "invalid_request", error_description: "flow_token required" }, 400);
+    return c.json(
+      { error: "invalid_request", error_description: "flow_token required" },
+      400,
+    );
   }
 
   try {
     await verifyFlowToken(flowToken);
   } catch {
     return c.json(
-      { error: "invalid_grant", error_description: "flow_token invalid or expired" },
+      {
+        error: "invalid_grant",
+        error_description: "flow_token invalid or expired",
+      },
       400,
     );
   }
@@ -147,7 +176,10 @@ oauth.get("/oauth/callback", async (c) => {
   const sessionJwt = readClerkSessionCookie(c.req.header("cookie") ?? "");
   if (!sessionJwt) {
     return c.json(
-      { error: "access_denied", error_description: "No Clerk session cookie found." },
+      {
+        error: "access_denied",
+        error_description: "No Clerk session cookie found.",
+      },
       401,
     );
   }
@@ -171,7 +203,10 @@ oauth.get("/oauth/callback", async (c) => {
   } catch (err) {
     if (err instanceof OrchestratorError) {
       return c.json(
-        { error: "server_error", error_description: `Orchestrator: ${err.message}` },
+        {
+          error: "server_error",
+          error_description: `Orchestrator: ${err.message}`,
+        },
         500,
       );
     }
@@ -206,14 +241,20 @@ oauth.post("/oauth/select-workspace", async (c) => {
 
   if (!flowToken || !workspaceId) {
     return c.json(
-      { error: "invalid_request", error_description: "flow_token and workspace_id required" },
+      {
+        error: "invalid_request",
+        error_description: "flow_token and workspace_id required",
+      },
       400,
     );
   }
 
   const sessionJwt = readClerkSessionCookie(c.req.header("cookie") ?? "");
   if (!sessionJwt) {
-    return c.json({ error: "access_denied", error_description: "No Clerk session" }, 401);
+    return c.json(
+      { error: "access_denied", error_description: "No Clerk session" },
+      401,
+    );
   }
 
   const clerk = await verifyClerkSessionJwt(sessionJwt);
@@ -222,7 +263,10 @@ oauth.post("/oauth/select-workspace", async (c) => {
 
   if (!workspace) {
     return c.json(
-      { error: "invalid_request", error_description: "workspace not found for user" },
+      {
+        error: "invalid_request",
+        error_description: "workspace not found for user",
+      },
       400,
     );
   }
@@ -256,23 +300,38 @@ oauth.post("/oauth/token", async (c) => {
     return c.json({ error: "unsupported_grant_type" }, 400);
   }
   if (!code) {
-    return c.json({ error: "invalid_request", error_description: "code required" }, 400);
+    return c.json(
+      { error: "invalid_request", error_description: "code required" },
+      400,
+    );
   }
 
   let claims: Awaited<ReturnType<typeof verifyAuthCode>>;
   try {
     claims = await verifyAuthCode(code);
   } catch {
-    return c.json({ error: "invalid_grant", error_description: "code invalid or expired" }, 400);
+    return c.json(
+      { error: "invalid_grant", error_description: "code invalid or expired" },
+      400,
+    );
   }
 
   if (redirectUri && claims.redirect_uri !== redirectUri) {
-    return c.json({ error: "invalid_grant", error_description: "redirect_uri mismatch" }, 400);
+    return c.json(
+      { error: "invalid_grant", error_description: "redirect_uri mismatch" },
+      400,
+    );
   }
 
   if (claims.code_challenge) {
     if (!codeVerifier) {
-      return c.json({ error: "invalid_request", error_description: "code_verifier required" }, 400);
+      return c.json(
+        {
+          error: "invalid_request",
+          error_description: "code_verifier required",
+        },
+        400,
+      );
     }
     const verifierOk = await verifyPkce(
       codeVerifier,
@@ -280,7 +339,13 @@ oauth.post("/oauth/token", async (c) => {
       claims.code_challenge_method,
     );
     if (!verifierOk) {
-      return c.json({ error: "invalid_grant", error_description: "PKCE verification failed" }, 400);
+      return c.json(
+        {
+          error: "invalid_grant",
+          error_description: "PKCE verification failed",
+        },
+        400,
+      );
     }
   }
 
@@ -300,7 +365,11 @@ oauth.post("/oauth/token", async (c) => {
   });
 });
 
-async function verifyPkce(verifier: string, challenge: string, method?: string): Promise<boolean> {
+async function verifyPkce(
+  verifier: string,
+  challenge: string,
+  method?: string,
+): Promise<boolean> {
   if (!method || method === "plain") return verifier === challenge;
   if (method === "S256") {
     const buf = new TextEncoder().encode(verifier);

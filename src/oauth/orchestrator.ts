@@ -27,17 +27,21 @@ export class OrchestratorError extends Error {
   }
 }
 
-// Parseable Cloud staging orchestrator (control plane).
-const DEFAULT_ORCHESTRATOR_URL = "https://orchestrator.cloud-staging.parseable.com";
+// Parseable Cloud orchestrator (control plane).
+const DEFAULT_ORCHESTRATOR_URL = "https://orchestrator.cloud.parseable.com";
 // Service-level static bearer used by Prism's cloudAxios interceptor to gate orchestrator access.
 // Override via ORCHESTRATOR_BEARER env var if prod uses a different service token.
-const DEFAULT_ORCHESTRATOR_BEARER = "aMNIgqb7lw7cqrQvDiw8bEpV8mlzrkRt1siybx2Tlrk=";
+const DEFAULT_ORCHESTRATOR_BEARER =
+  "aMNIgqb7lw7cqrQvDiw8bEpV8mlzrkRt1siybx2Tlrk=";
 
 function getOrchestratorConfig(): { baseUrl: string; serviceBearer: string } {
-  const baseUrl = (process.env.ORCHESTRATOR_URL ?? DEFAULT_ORCHESTRATOR_URL).replace(/\/+$/, "");
+  const baseUrl = (
+    process.env.ORCHESTRATOR_URL ?? DEFAULT_ORCHESTRATOR_URL
+  ).replace(/\/+$/, "");
   return {
     baseUrl,
-    serviceBearer: process.env.ORCHESTRATOR_BEARER ?? DEFAULT_ORCHESTRATOR_BEARER,
+    serviceBearer:
+      process.env.ORCHESTRATOR_BEARER ?? DEFAULT_ORCHESTRATOR_BEARER,
   };
 }
 
@@ -69,6 +73,9 @@ export async function getOrganization(
   try {
     return JSON.parse(text) as OrganizationResponse;
   } catch {
-    throw new OrchestratorError(500, `Orchestrator returned non-JSON: ${text.slice(0, 200)}`);
+    throw new OrchestratorError(
+      500,
+      `Orchestrator returned non-JSON: ${text.slice(0, 200)}`,
+    );
   }
 }
