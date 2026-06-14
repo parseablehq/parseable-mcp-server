@@ -173,8 +173,11 @@ oauth.get("/oauth/callback", async (c) => {
     );
   }
 
-  const sessionJwt = readClerkSessionCookie(c.req.header("cookie") ?? "");
+  const rawCookie = c.req.header("cookie") ?? "";
+  console.log("[oauth/callback] cookie header:", rawCookie || "(empty)");
+  const sessionJwt = readClerkSessionCookie(rawCookie);
   if (!sessionJwt) {
+    console.log("[oauth/callback] no __session cookie found in:", rawCookie || "(empty)");
     return c.json(
       {
         error: "access_denied",
