@@ -149,7 +149,8 @@ oauth.get("/sso-callback", (c) => {
 });
 
 oauth.get("/post-auth", (c) => {
-  return c.html(renderPostAuthPage({ publicBaseUrl: getPublicBase() }));
+  const { publishableKey } = getClerkConfig();
+  return c.html(renderPostAuthPage({ publishableKey, publicBaseUrl: getPublicBase() }));
 });
 
 oauth.get("/oauth/callback", async (c) => {
@@ -225,6 +226,15 @@ oauth.get("/oauth/callback", async (c) => {
 
   if (workspaces.length === 1) {
     const w = workspaces[0];
+    if (w.state !== "running") {
+      return c.json(
+        {
+          error: "invalid_request",
+          error_description: `Workspace state is "${w.state}", not running.`,
+        },
+        400,
+      );
+    }
     const result = await mintAuthCodeRedirect(flowToken, {
       clerkUserId: clerk.userId,
       clerkSessionId: clerk.sessionId,

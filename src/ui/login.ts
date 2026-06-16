@@ -290,24 +290,46 @@ export function renderSsoCallbackPage(opts: {
  * Page that runs after Clerk auth completes. Reads flow_token from sessionStorage
  * and redirects to /oauth/callback?flow_token=... to continue MCP OAuth flow.
  */
-export function renderPostAuthPage(opts: { publicBaseUrl: string }): string {
+export function renderPostAuthPage(opts: {
+  publishableKey: string;
+  publicBaseUrl: string;
+}): string {
+  const pk = esc(opts.publishableKey);
   const callback = `${opts.publicBaseUrl.replace(/\/+$/, "")}/oauth/callback`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><title>Finishing sign-in…</title>
 <style>body{background:#020617;color:#e5e7eb;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}</style>
 </head><body>
 <div>Finishing sign-in…</div>
+<script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" data-clerk-publishable-key="${pk}" async crossorigin="anonymous"></script>
 <script>
-  try {
-    var token = sessionStorage.getItem("parseable_mcp_flow_token");
-    if (!token) {
-      document.body.innerHTML = "<pre style='color:#f87171;padding:1rem'>Missing flow_token — restart the connector from Claude.</pre>";
-    } else {
-      window.location.href = "${esc(callback)}?flow_token=" + encodeURIComponent(token);
+  function waitForClerk(cb){ if(window.Clerk) cb(window.Clerk); else setTimeout(function(){waitForClerk(cb);},50); }
+  function go() {
+    try {
+      var token = sessionStorage.getItem("parseable_mcp_flow_token");
+      if (!token) {
+        document.body.innerHTML = "<pre style='color:#f87171;padding:1rem'>Missing flow_token — restart the connector from Claude.</pre>";
+        return;
+      }
+      window.location.replace("${esc(callback)}?flow_token=" + encodeURIComponent(token));
+    } catch (e) {
+      document.body.innerHTML = "<pre style='color:#f87171;padding:1rem'>" + e.message + "</pre>";
     }
-  } catch (e) {
-    document.body.innerHTML = "<pre style='color:#f87171;padding:1rem'>" + e.message + "</pre>";
   }
+  waitForClerk(function(clerk){
+    clerk.load({ publishableKey: "${pk}", signInUrl: "/login" })
+      .then(function(){
+        // Wait briefly for Clerk to consume __clerk_handshake cookie and set __session.
+        var tries = 0;
+        function check(){
+          tries++;
+          if (clerk.session || tries > 40) { go(); return; }
+          setTimeout(check, 100);
+        }
+        check();
+      })
+      .catch(function(err){ console.error("clerk.load:", err); go(); });
+  });
 </script>
 </body></html>`;
 }
