@@ -17,6 +17,16 @@ const UI_DIR = join(__dirname, "ui");
 const DEFAULT_PORT = 8787;
 const DEFAULT_MAX_ROWS = 1000;
 const DEFAULT_QUERY_TIMEOUT_MS = 30_000;
+const HELP_TEXT = `Parseable MCP server
+
+HTTP MCP endpoint:
+  POST /mcp
+
+Required headers for static Parseable credentials:
+  X-Parseable-URL
+  X-Parseable-Username
+  X-Parseable-Password
+`;
 
 export const app = new Hono();
 
@@ -65,6 +75,16 @@ function serveIndex(c: Context) {
   return c.html(_indexHtmlCache);
 }
 
+function serveRoot(c: Context) {
+  if (!_indexHtmlCache) {
+    _indexHtmlCache = buildIndexHtml();
+  }
+  if (!_indexHtmlCache) {
+    return c.text(HELP_TEXT);
+  }
+  return c.html(_indexHtmlCache);
+}
+
 // Catch Clerk handshake redirects on any path
 app.use("/*", async (c, next) => {
   if (c.req.method === "GET" && c.req.query("__clerk_handshake")) {
@@ -101,7 +121,7 @@ app.get("/assets/*", async (c) => {
 
 app.route("/", oauth);
 
-app.get("/", serveIndex);
+app.get("/", serveRoot);
 
 async function buildClerkClient(bearer: string): Promise<{
   client: ParseableClient;
@@ -160,7 +180,7 @@ function buildBasicClient(reqHeaders: Headers): {
   return { client: new ParseableClient(config), config };
 }
 
-app.post("/", async (c) => {
+async function handleMcpPost(c: Context) {
   try {
     const bearer = c.req
       .header("authorization")
@@ -182,7 +202,9 @@ app.post("/", async (c) => {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: message }, 500);
   }
-});
+}
+
+app.post("/mcp", handleMcpPost);
 
 export async function startHttpServer(): Promise<void> {
   const port = Number(process.env.PORT ?? DEFAULT_PORT);
