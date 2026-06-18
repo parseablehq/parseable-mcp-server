@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getClerkConfig, verifyClerkSessionJwt } from "./clerk.js";
+import { verifyClerkSessionJwt } from "./clerk.js";
 import {
   signAccessToken,
   signAuthCode,
@@ -12,10 +12,7 @@ import { getOrganization, OrchestratorError } from "./orchestrator.js";
 export const oauth = new Hono();
 
 function getPublicBase(): string {
-  return (process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787").replace(
-    /\/+$/,
-    "",
-  );
+  return (process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787").replace(/\/+$/, "");
 }
 
 function readClerkSessionCookie(cookieHeader: string): string | undefined {
@@ -50,13 +47,8 @@ oauth.get("/.well-known/oauth-authorization-server", (c) => {
 oauth.post("/oauth/register", async (c) => {
   // Dynamic Client Registration (RFC 7591) — stub: every client gets a generated id.
   // We rely on PKCE + redirect_uri whitelist (caller's own URI) for actual security.
-  const body = (await c.req.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
-  const redirectUris = Array.isArray(body.redirect_uris)
-    ? body.redirect_uris
-    : [];
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
   const clientId = `mcp-client-${crypto.randomUUID()}`;
   return c.json(
     {
@@ -83,10 +75,7 @@ oauth.get("/oauth/authorize", async (c) => {
     return c.json({ error: "unsupported_response_type" }, 400);
   }
   if (!redirectUri) {
-    return c.json(
-      { error: "invalid_request", error_description: "redirect_uri required" },
-      400,
-    );
+    return c.json({ error: "invalid_request", error_description: "redirect_uri required" }, 400);
   }
 
   const flowToken = await signFlowToken({
@@ -125,10 +114,7 @@ oauth.get("/signin", (c) => {
 oauth.get("/oauth/callback", async (c) => {
   const flowToken = c.req.query("flow_token");
   if (!flowToken) {
-    return c.json(
-      { error: "invalid_request", error_description: "flow_token required" },
-      400,
-    );
+    return c.json({ error: "invalid_request", error_description: "flow_token required" }, 400);
   }
 
   try {
@@ -191,7 +177,10 @@ oauth.get("/oauth/callback", async (c) => {
 
   if (workspaces.length === 0) {
     const data = Buffer.from(JSON.stringify({ workspaces: [], username })).toString("base64");
-    return c.redirect(`${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`, 302);
+    return c.redirect(
+      `${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`,
+      302,
+    );
   }
 
   if (workspaces.length === 1) {
@@ -215,7 +204,10 @@ oauth.get("/oauth/callback", async (c) => {
   }
 
   const data = Buffer.from(JSON.stringify({ workspaces, username })).toString("base64");
-  return c.redirect(`${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`, 302);
+  return c.redirect(
+    `${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`,
+    302,
+  );
 });
 
 oauth.post("/oauth/select-workspace", async (c) => {
@@ -235,10 +227,7 @@ oauth.post("/oauth/select-workspace", async (c) => {
 
   const sessionJwt = readClerkSessionCookie(c.req.header("cookie") ?? "");
   if (!sessionJwt) {
-    return c.json(
-      { error: "access_denied", error_description: "No Clerk session" },
-      401,
-    );
+    return c.json({ error: "access_denied", error_description: "No Clerk session" }, 401);
   }
 
   const clerk = await verifyClerkSessionJwt(sessionJwt);
@@ -284,27 +273,18 @@ oauth.post("/oauth/token", async (c) => {
     return c.json({ error: "unsupported_grant_type" }, 400);
   }
   if (!code) {
-    return c.json(
-      { error: "invalid_request", error_description: "code required" },
-      400,
-    );
+    return c.json({ error: "invalid_request", error_description: "code required" }, 400);
   }
 
   let claims: Awaited<ReturnType<typeof verifyAuthCode>>;
   try {
     claims = await verifyAuthCode(code);
   } catch {
-    return c.json(
-      { error: "invalid_grant", error_description: "code invalid or expired" },
-      400,
-    );
+    return c.json({ error: "invalid_grant", error_description: "code invalid or expired" }, 400);
   }
 
   if (redirectUri && claims.redirect_uri !== redirectUri) {
-    return c.json(
-      { error: "invalid_grant", error_description: "redirect_uri mismatch" },
-      400,
-    );
+    return c.json({ error: "invalid_grant", error_description: "redirect_uri mismatch" }, 400);
   }
 
   if (claims.code_challenge) {
@@ -349,11 +329,7 @@ oauth.post("/oauth/token", async (c) => {
   });
 });
 
-async function verifyPkce(
-  verifier: string,
-  challenge: string,
-  method?: string,
-): Promise<boolean> {
+async function verifyPkce(verifier: string, challenge: string, method?: string): Promise<boolean> {
   if (!method || method === "plain") return verifier === challenge;
   if (method === "S256") {
     const buf = new TextEncoder().encode(verifier);

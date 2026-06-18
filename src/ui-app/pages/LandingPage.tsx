@@ -70,7 +70,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="text-xs px-2 py-1 rounded bg-[#E8EBFF] text-[#3a3a8c] hover:bg-[#d8dcf5] transition-colors font-medium cursor-pointer border-none"
+      className="text-xs px-2 py-1 rounded bg-[#E8EBFF] text-parseableBlue-500 hover:bg-[#d8dcf5] transition-colors font-medium cursor-pointer border-none"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -89,8 +89,8 @@ export function LandingPage() {
           <ParseableLogo />
         </a>
         <div className="flex items-center gap-4">
-          <a href="https://www.parseable.com/docs" target="_blank" rel="noopener noreferrer" className="text-sm text-[#52525b] hover:text-[#3a3a8c] no-underline">Docs</a>
-          <a href="https://github.com/parseablehq/parseable-mcp-server" target="_blank" rel="noopener noreferrer" className="text-sm text-[#52525b] hover:text-[#3a3a8c] no-underline flex items-center gap-1.5">
+          <a href="https://www.parseable.com/docs" target="_blank" rel="noopener noreferrer" className="text-sm text-coolGray-400 hover:text-parseableBlue-500 no-underline">Docs</a>
+          <a href="https://github.com/parseablehq/parseable-mcp-server" target="_blank" rel="noopener noreferrer" className="text-sm text-coolGray-400 hover:text-parseableBlue-500 no-underline flex items-center gap-1.5">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
             GitHub
           </a>
@@ -102,15 +102,15 @@ export function LandingPage() {
         <section className="text-center flex flex-col items-center gap-6">
           <ParseableLogo />
           <div className="flex flex-col gap-3">
-            <h1 className="text-4xl font-bold text-[#18181b] leading-tight">Parseable MCP Server</h1>
-            <p className="text-lg text-[#52525b] max-w-xl mx-auto leading-relaxed">
+            <h1 className="text-4xl font-bold text-coolGray-100 leading-tight">Parseable MCP Server</h1>
+            <p className="text-lg text-coolGray-400 max-w-xl mx-auto leading-relaxed">
               Connect your AI tools to Parseable — query logs, explore datasets, manage alerts, and more using natural language.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <a
               href="/login"
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-[#3a3a8c] text-white text-sm font-semibold hover:bg-[#2e2e70] no-underline transition-colors"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-parseableBlue-500 text-white text-sm font-semibold hover:bg-parseableBlue-400 no-underline transition-colors"
             >
               Connect with OAuth
             </a>
@@ -118,7 +118,7 @@ export function LandingPage() {
               href="https://www.parseable.com/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-md border border-[#E5E7EB] bg-white text-[#27272a] text-sm font-semibold hover:bg-[#F9FAFB] no-underline transition-colors"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-md border border-[#E5E7EB] bg-white text-coolGray-200 text-sm font-semibold hover:bg-[#F9FAFB] no-underline transition-colors"
             >
               Documentation
             </a>
@@ -127,22 +127,22 @@ export function LandingPage() {
 
         {/* MCP endpoint */}
         <section className="bg-white rounded-2xl border border-[#E5E7EB] p-6 flex flex-col gap-2">
-          <p className="text-xs font-semibold text-[#71717a] uppercase tracking-wide">MCP Endpoint</p>
+          <p className="text-xs font-semibold text-coolGray-500 uppercase tracking-wide">MCP Endpoint</p>
           <div className="flex items-center justify-between gap-3 bg-[#F9FAFB] rounded-lg px-4 py-3">
-            <code className="text-sm text-[#3a3a8c] font-mono">{MCP_URL}</code>
+            <code className="text-sm text-parseableBlue-500 font-mono">{MCP_URL}</code>
             <CopyButton text={MCP_URL} />
           </div>
-          <p className="text-xs text-[#71717a]">HTTP transport · OAuth 2.0 · PKCE</p>
+          <p className="text-xs text-coolGray-500">HTTP transport · OAuth 2.0 · PKCE</p>
         </section>
 
         {/* Tools */}
         <section className="flex flex-col gap-5">
-          <h2 className="text-xl font-semibold text-[#18181b]">What you can do</h2>
+          <h2 className="text-xl font-semibold text-coolGray-100">What you can do</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {tools.map((t) => (
               <div key={t} className="flex items-center gap-3 bg-white rounded-xl border border-[#E5E7EB] px-4 py-3">
-                <div className="w-2 h-2 rounded-full bg-[#3a3a8c] shrink-0" />
-                <span className="text-sm text-[#27272a]">{t}</span>
+                <div className="w-2 h-2 rounded-full bg-parseableBlue-500 shrink-0" />
+                <span className="text-sm text-coolGray-200">{t}</span>
               </div>
             ))}
           </div>
@@ -150,7 +150,7 @@ export function LandingPage() {
 
         {/* Setup */}
         <section className="flex flex-col gap-5">
-          <h2 className="text-xl font-semibold text-[#18181b]">Quick Setup</h2>
+          <h2 className="text-xl font-semibold text-coolGray-100">Quick Setup</h2>
           <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
             {/* Tab bar */}
             <div className="flex border-b border-[#E5E7EB] overflow-x-auto">
@@ -160,8 +160,8 @@ export function LandingPage() {
                   onClick={() => setTab(t.id)}
                   className={`px-5 py-3 text-sm font-medium whitespace-nowrap cursor-pointer border-none transition-colors ${
                     tab === t.id
-                      ? "text-[#3a3a8c] border-b-2 border-[#3a3a8c] bg-white"
-                      : "text-[#71717a] hover:text-[#27272a] bg-transparent"
+                      ? "text-parseableBlue-500 border-b-2 border-parseableBlue-500 bg-white"
+                      : "text-coolGray-500 hover:text-coolGray-200 bg-transparent"
                   }`}
                 >
                   {t.label}
@@ -175,29 +175,29 @@ export function LandingPage() {
                 <ol className="flex flex-col gap-2">
                   {cfg.instructions.map((step, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-[#E8EBFF] text-[#3a3a8c] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                      <span className="text-sm text-[#27272a]">{step}</span>
+                      <span className="w-6 h-6 rounded-full bg-[#E8EBFF] text-parseableBlue-500 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                      <span className="text-sm text-coolGray-200">{step}</span>
                     </li>
                   ))}
                 </ol>
               )}
               {cfg.cli && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-[#71717a]">Run in terminal</p>
-                  <div className="flex items-center justify-between gap-3 bg-[#18181b] rounded-lg px-4 py-3">
-                    <code className="text-sm text-[#e4e4e7] font-mono break-all">{cfg.cli}</code>
+                  <p className="text-xs font-medium text-coolGray-500">Run in terminal</p>
+                  <div className="flex items-center justify-between gap-3 bg-coolGray-100 rounded-lg px-4 py-3">
+                    <code className="text-sm text-coolGray-900 font-mono break-all">{cfg.cli}</code>
                     <CopyButton text={cfg.cli} />
                   </div>
                 </div>
               )}
               {cfg.json && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-[#71717a]">Add to MCP config</p>
-                  <div className="relative bg-[#18181b] rounded-lg px-4 py-3">
+                  <p className="text-xs font-medium text-coolGray-500">Add to MCP config</p>
+                  <div className="relative bg-coolGray-100 rounded-lg px-4 py-3">
                     <div className="absolute top-3 right-3">
                       <CopyButton text={cfg.json} />
                     </div>
-                    <pre className="text-sm text-[#e4e4e7] font-mono overflow-x-auto pr-12">{cfg.json}</pre>
+                    <pre className="text-sm text-coolGray-900 font-mono overflow-x-auto pr-12">{cfg.json}</pre>
                   </div>
                 </div>
               )}
@@ -207,14 +207,14 @@ export function LandingPage() {
 
         {/* Footer */}
         <footer className="text-center flex flex-col gap-2 pb-4">
-          <div className="flex items-center justify-center gap-4 text-sm text-[#71717a]">
-            <a href="https://www.parseable.com/csa" target="_blank" rel="noopener noreferrer" className="hover:text-[#3a3a8c] no-underline">Terms</a>
+          <div className="flex items-center justify-center gap-4 text-sm text-coolGray-500">
+            <a href="https://www.parseable.com/csa" target="_blank" rel="noopener noreferrer" className="hover:text-parseableBlue-500 no-underline">Terms</a>
             <span>·</span>
-            <a href="https://www.parseable.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-[#3a3a8c] no-underline">Privacy</a>
+            <a href="https://www.parseable.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-parseableBlue-500 no-underline">Privacy</a>
             <span>·</span>
-            <a href="https://www.parseable.com/docs" target="_blank" rel="noopener noreferrer" className="hover:text-[#3a3a8c] no-underline">Docs</a>
+            <a href="https://www.parseable.com/docs" target="_blank" rel="noopener noreferrer" className="hover:text-parseableBlue-500 no-underline">Docs</a>
           </div>
-          <p className="text-xs text-[#a1a1aa]">© {new Date().getFullYear()} Parseable Inc.</p>
+          <p className="text-xs text-coolGray-600">© {new Date().getFullYear()} Parseable Inc.</p>
         </footer>
       </main>
     </div>

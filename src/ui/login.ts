@@ -107,21 +107,42 @@ const HEAD = `
 </style>
 `;
 
-
 const FEATURES = [
-  { color: "#15a0a2", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`, text: "Petascale ingestion" },
-  { color: "#7C3AED", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>`, text: "Natural language interface" },
-  { color: "#22C55E", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`, text: "Native OpenTelemetry support" },
-  { color: "#F59E0B", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`, text: "Blazing fast query engine" },
-  { color: "#6E6EBA", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`, text: "Up to 90% compression" },
+  {
+    color: "#15a0a2",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+    text: "Petascale ingestion",
+  },
+  {
+    color: "#7C3AED",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>`,
+    text: "Natural language interface",
+  },
+  {
+    color: "#22C55E",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`,
+    text: "Native OpenTelemetry support",
+  },
+  {
+    color: "#F59E0B",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    text: "Blazing fast query engine",
+  },
+  {
+    color: "#6E6EBA",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+    text: "Up to 90% compression",
+  },
 ];
 
 function leftPanel(): string {
-  const featureItems = FEATURES.map(f => `
+  const featureItems = FEATURES.map(
+    (f) => `
     <div class="feature">
       <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="${f.color}" stroke-width="2" width="18" height="18">${f.icon.replace(/<svg[^>]*>/, "").replace("</svg>", "")}</svg></div>
       <span class="feature-text">${f.text}</span>
-    </div>`).join("");
+    </div>`,
+  ).join("");
 
   return `<div class="left">
   <a class="left-logo" href="https://www.parseable.com" target="_blank" rel="noopener noreferrer" aria-label="Parseable">

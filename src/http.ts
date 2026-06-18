@@ -1,3 +1,7 @@
+import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { type Context, Hono } from "hono";
 import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "./auth.js";
@@ -6,10 +10,6 @@ import { ParseableClient } from "./client.js";
 import { getClerkConfig, mintClerkSessionToken } from "./oauth/clerk.js";
 import { verifyAccessToken } from "./oauth/jwt.js";
 import { oauth } from "./oauth/routes.js";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-import { readFile } from "fs/promises";
-import { existsSync, readFileSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, "ui");
@@ -29,8 +29,9 @@ app.onError((err, c) => {
 app.use("/*", async (c, next) => {
   const t0 = Date.now();
   await next();
+  const query = c.req.url.includes("?") ? `?${c.req.url.split("?")[1]}` : "";
   console.error(
-    `[mcp] ${c.req.method} ${c.req.path}${c.req.url.includes("?") ? "?" + c.req.url.split("?")[1] : ""} -> ${c.res.status} (${Date.now() - t0}ms)`,
+    `[mcp] ${c.req.method} ${c.req.path}${query} -> ${c.res.status} (${Date.now() - t0}ms)`,
   );
 });
 
@@ -43,9 +44,14 @@ function buildIndexHtml(): string {
   const indexPath = join(UI_DIR, "index.html");
   if (!existsSync(indexPath)) return "";
   const { publishableKey } = getClerkConfig();
-  const publicBaseUrl = (process.env.MCP_PUBLIC_BASE_URL ?? `http://localhost:${process.env.PORT ?? DEFAULT_PORT}`).replace(/\/+$/, "");
+  const publicBaseUrl = (
+    process.env.MCP_PUBLIC_BASE_URL ?? `http://localhost:${process.env.PORT ?? DEFAULT_PORT}`
+  ).replace(/\/+$/, "");
   // Escape </script> to prevent XSS if key ever contains it
-  const config = JSON.stringify({ publishableKey, publicBaseUrl }).replace(/<\/script>/gi, "<\\/script>");
+  const config = JSON.stringify({ publishableKey, publicBaseUrl }).replace(
+    /<\/script>/gi,
+    "<\\/script>",
+  );
   return readFileSync(indexPath, "utf-8").replace("__PARSEABLE_CONFIG_PLACEHOLDER__", config);
 }
 
@@ -88,7 +94,9 @@ app.get("/assets/*", async (c) => {
     woff: "font/woff",
   };
   const buf = await readFile(filePath);
-  return new Response(buf, { headers: { "Content-Type": mime[ext] ?? "application/octet-stream" } });
+  return new Response(buf, {
+    headers: { "Content-Type": mime[ext] ?? "application/octet-stream" },
+  });
 });
 
 app.route("/", oauth);
@@ -138,9 +146,7 @@ function buildBasicClient(reqHeaders: Headers): {
 } {
   const creds = parseAuthHeaders(reqHeaders);
   assertNotPrivateUrl(creds.url);
-  const maxRows = Number(
-    reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS,
-  );
+  const maxRows = Number(reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS);
   const queryTimeoutMs = Number(
     reqHeaders.get("X-Parseable-Query-Timeout-Ms") ?? DEFAULT_QUERY_TIMEOUT_MS,
   );
@@ -160,9 +166,7 @@ app.post("/", async (c) => {
       .header("authorization")
       ?.replace(/^Bearer\s+/i, "")
       .trim();
-    const built = bearer
-      ? await buildClerkClient(bearer)
-      : buildBasicClient(c.req.raw.headers);
+    const built = bearer ? await buildClerkClient(bearer) : buildBasicClient(c.req.raw.headers);
 
     const mcp = buildMcpServer({ client: built.client, config: built.config });
 
