@@ -1,10 +1,4 @@
 import { Hono } from "hono";
-import {
-  renderLoginPage,
-  renderPostAuthPage,
-  renderSsoCallbackPage,
-} from "../ui/login.js";
-import { renderNoWorkspace, renderWorkspacePicker } from "../ui/picker.js";
 import { getClerkConfig, verifyClerkSessionJwt } from "./clerk.js";
 import {
   signAccessToken,
@@ -107,22 +101,7 @@ oauth.get("/oauth/authorize", async (c) => {
   return c.redirect(loginUrl, 302);
 });
 
-oauth.get("/login", (c) => {
-  const flowToken = c.req.query("flow_token");
-  if (!flowToken) {
-    return c.json(
-      { error: "invalid_request", error_description: "flow_token required" },
-      400,
-    );
-  }
-  const { publishableKey } = getClerkConfig();
-  const html = renderLoginPage({
-    publishableKey,
-    flowToken,
-    publicBaseUrl: getPublicBase(),
-  });
-  return c.html(html);
-});
+// /login is served as SPA by http.ts — no handler needed here.
 
 // Safety alias: Clerk staging instance has "Sign-in URL" = /signin (matches Prism's
 // SPA route). If Clerk-js ever auto-navigates to /signin here, bounce back to /login
@@ -141,17 +120,7 @@ oauth.get("/signin", (c) => {
 </body></html>`);
 });
 
-oauth.get("/sso-callback", (c) => {
-  const { publishableKey } = getClerkConfig();
-  return c.html(
-    renderSsoCallbackPage({ publishableKey, publicBaseUrl: getPublicBase() }),
-  );
-});
-
-oauth.get("/post-auth", (c) => {
-  const { publishableKey } = getClerkConfig();
-  return c.html(renderPostAuthPage({ publishableKey, publicBaseUrl: getPublicBase() }));
-});
+// /sso-callback and /post-auth are served as SPA by http.ts — no handlers needed here.
 
 oauth.get("/oauth/callback", async (c) => {
   const flowToken = c.req.query("flow_token");
@@ -221,7 +190,8 @@ oauth.get("/oauth/callback", async (c) => {
   const username = org.username ?? clerk.userId;
 
   if (workspaces.length === 0) {
-    return c.html(renderNoWorkspace({ username }));
+    const data = Buffer.from(JSON.stringify({ workspaces: [], username })).toString("base64");
+    return c.redirect(`${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`, 302);
   }
 
   if (workspaces.length === 1) {
@@ -244,7 +214,8 @@ oauth.get("/oauth/callback", async (c) => {
     return c.redirect(result.redirectUrl, 302);
   }
 
-  return c.html(renderWorkspacePicker({ flowToken, workspaces, username }));
+  const data = Buffer.from(JSON.stringify({ workspaces, username })).toString("base64");
+  return c.redirect(`${getPublicBase()}/pick-workspace?flow_token=${encodeURIComponent(flowToken)}&data=${encodeURIComponent(data)}`, 302);
 });
 
 oauth.post("/oauth/select-workspace", async (c) => {

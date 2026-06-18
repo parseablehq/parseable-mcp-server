@@ -14,7 +14,10 @@
   ],
   "scripts": {
     "build": "tsc && chmod +x dist/server.js",
+    "build:ui": "vite build",
+    "build:all": "npm run build:ui && npm run build",
     "dev": "tsc --watch",
+    "dev:ui": "vite",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,10 +39,20 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
+    "@clerk/clerk-react": "^5.61.8",
+    "@tailwindcss/vite": "^4.3.1",
     "@types/inquirer": "^9.0.9",
     "@types/node": "^22.10.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.0",
+    "tailwindcss": "^4.3.1",
     "typescript": "^5.7.2",
+    "vite": "^8.0.16",
     "vitest": "^4.1.6"
   },
   "engines": {

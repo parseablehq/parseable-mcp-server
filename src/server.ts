@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import "dotenv/config";
 
 async function main(): Promise<void> {
   const cmd = process.argv[2] ?? "run";

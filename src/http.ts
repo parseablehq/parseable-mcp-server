@@ -1,11 +1,18 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "./auth.js";
 import { buildMcpServer } from "./bootstrap.js";
 import { ParseableClient } from "./client.js";
-import { mintClerkSessionToken } from "./oauth/clerk.js";
+import { getClerkConfig, mintClerkSessionToken } from "./oauth/clerk.js";
 import { verifyAccessToken } from "./oauth/jwt.js";
 import { oauth } from "./oauth/routes.js";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { readFile } from "fs/promises";
+import { existsSync, readFileSync } from "fs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const UI_DIR = join(__dirname, "ui");
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_MAX_ROWS = 1000;
@@ -29,32 +36,64 @@ app.use("/*", async (c, next) => {
 
 app.get("/health", (c) => c.text("ok"));
 
-// Catch Clerk handshake redirects that may land on unexpected paths
-// (Clerk's app config sometimes overrides the redirectUrl we passed to
-// authenticateWithRedirect with a dashboard-configured default that has
-// no relation to our routes). Detect __clerk_handshake query param and
-// serve the SSO callback page from any path so Clerk JS can process the
-// handshake + bounce to /post-auth.
+// Cache the injected index.html — built once at first request, reused after.
+let _indexHtmlCache: string | null = null;
+
+function buildIndexHtml(): string {
+  const indexPath = join(UI_DIR, "index.html");
+  if (!existsSync(indexPath)) return "";
+  const { publishableKey } = getClerkConfig();
+  const publicBaseUrl = (process.env.MCP_PUBLIC_BASE_URL ?? `http://localhost:${process.env.PORT ?? DEFAULT_PORT}`).replace(/\/+$/, "");
+  // Escape </script> to prevent XSS if key ever contains it
+  const config = JSON.stringify({ publishableKey, publicBaseUrl }).replace(/<\/script>/gi, "<\\/script>");
+  return readFileSync(indexPath, "utf-8").replace("__PARSEABLE_CONFIG_PLACEHOLDER__", config);
+}
+
+function serveIndex(c: Context) {
+  if (!_indexHtmlCache) {
+    _indexHtmlCache = buildIndexHtml();
+  }
+  if (!_indexHtmlCache) {
+    return c.text("UI not built. Run: npm run build:ui", 503);
+  }
+  return c.html(_indexHtmlCache);
+}
+
+// Catch Clerk handshake redirects on any path
 app.use("/*", async (c, next) => {
   if (c.req.method === "GET" && c.req.query("__clerk_handshake")) {
-    const { renderSsoCallbackPage } = await import("./ui/login.js");
-    const { getClerkConfig } = await import("./oauth/clerk.js");
-    const { publishableKey } = getClerkConfig();
-    const publicBaseUrl = (
-      process.env.MCP_PUBLIC_BASE_URL ?? "http://localhost:8787"
-    ).replace(/\/+$/, "");
-    return c.html(renderSsoCallbackPage({ publishableKey, publicBaseUrl }));
+    return serveIndex(c);
   }
   return next();
 });
 
+// UI page routes → serve React SPA
+app.get("/login", serveIndex);
+app.get("/sso-callback", serveIndex);
+app.get("/post-auth", serveIndex);
+app.get("/pick-workspace", serveIndex);
+
+// Static assets for the React build (JS/CSS/etc)
+app.get("/assets/*", async (c) => {
+  const filePath = join(UI_DIR, c.req.path);
+  if (!existsSync(filePath)) return c.notFound();
+  const ext = filePath.split(".").pop() ?? "";
+  const mime: Record<string, string> = {
+    js: "application/javascript",
+    css: "text/css",
+    svg: "image/svg+xml",
+    png: "image/png",
+    ico: "image/x-icon",
+    woff2: "font/woff2",
+    woff: "font/woff",
+  };
+  const buf = await readFile(filePath);
+  return new Response(buf, { headers: { "Content-Type": mime[ext] ?? "application/octet-stream" } });
+});
+
 app.route("/", oauth);
 
-app.get("/", (c) =>
-  c.text(
-    "Parseable MCP server (HTTP).\n\nAdd as a Claude custom connector — OAuth flow signs you in via Clerk and routes to your Parseable workspace.\n\nFor curl / MCP Inspector testing without OAuth:\nPOST /mcp with headers X-Parseable-URL, X-Parseable-Username, X-Parseable-Password.\n\nhttps://github.com/parseablehq/parseable-mcp-server",
-  ),
-);
+app.get("/", serveIndex);
 
 async function buildClerkClient(bearer: string): Promise<{
   client: ParseableClient;
@@ -115,7 +154,7 @@ function buildBasicClient(reqHeaders: Headers): {
   return { client: new ParseableClient(config), config };
 }
 
-app.post("/mcp", async (c) => {
+app.post("/", async (c) => {
   try {
     const bearer = c.req
       .header("authorization")

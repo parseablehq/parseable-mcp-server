@@ -1,20 +1,27 @@
 # Parseable MCP Server
 
-Model Context Protocol server for [Parseable](https://www.parseable.com). Lets any MCP-capable client (Claude Desktop, Claude Code, Cursor, Codex, VS Code Copilot, Continue, Windsurf, Cline, Zed) discover, query, and manage Parseable datasets and alerts.
+Model Context Protocol server for [Parseable](https://www.parseable.com). Lets any MCP-capable client (Claude Desktop, Claude Code, Cursor, VS Code Copilot, Windsurf, Continue, Cline, Zed, Codex) discover, query, and manage Parseable datasets and alerts using natural language.
 
-> **Status:** v0.2 — 27 tools across discovery, query (SQL + PromQL), alerts, alert targets, diagnostics, RBAC (read-only), and admin (read-only). Tools-only over stdio for maximum cross-client compatibility.
+**Two transports:**
 
-## Quickstart
+| Mode | Transport | Auth | Use when |
+|------|-----------|------|----------|
+| `stdio` | Stdin/stdout | Basic auth via env vars | Claude Desktop, Cursor, VS Code, local clients |
+| `http` | HTTP + SSE | OAuth 2.0 via Clerk | Claude Desktop custom connector, hosted deployments |
 
-One command, interactive setup — detects Claude Desktop / Cursor, asks for your Parseable URL + credentials, writes their config files:
+---
+
+## Quickstart — stdio (local)
+
+One command — interactive setup, detects Claude Desktop / Cursor, writes config files:
 
 ```bash
 npx -y @parseable/parseable-mcp-server init
 ```
 
-Restart your MCP client. Tools appear. Skip the rest of this README unless you want to configure manually.
+Restart your MCP client. Tools appear. Done.
 
-For scripted / non-interactive setup:
+Scripted:
 
 ```bash
 npx -y @parseable/parseable-mcp-server init \
@@ -24,119 +31,205 @@ npx -y @parseable/parseable-mcp-server init \
   --password "$PARSEABLE_PASSWORD"
 ```
 
-Supported `--client` values: `claude-desktop`, `cursor`. Existing config files are backed up as `<config>.bak` before being modified. Other `mcpServers` entries are preserved.
+Supported `--client` values: `claude-desktop`, `cursor`.
+
+---
+
+## Quickstart — HTTP + OAuth (hosted)
+
+The HTTP mode serves a landing page, OAuth login UI, and the MCP endpoint — all from one process.
+
+### 1. Set env vars
+
+```bash
+# .env
+PARSEABLE_URL=https://your-parseable.example.com
+PARSEABLE_USERNAME=admin
+PARSEABLE_PASSWORD=your-password
+
+PORT=8787
+MCP_PUBLIC_BASE_URL=https://mcp.your-domain.com   # public URL of this server
+
+CLERK_PUBLISHABLE_KEY=pk_live_xxx   # Clerk Dashboard → API Keys
+CLERK_SECRET_KEY=sk_live_xxx        # Clerk Dashboard → API Keys (server-side only)
+```
+
+### 2. Run
+
+```bash
+# From source
+npm run build:all
+node dist/server.js http
+
+# Docker
+docker build -t parseable-mcp-server .
+docker run -p 8787:8787 --env-file .env parseable-mcp-server
+```
+
+### 3. Connect from Claude
+
+- Claude Desktop → Settings → Connectors → Add custom connector
+- Name: `Parseable`
+- URL: `https://mcp.your-domain.com`
+- Click Add → Connect → complete OAuth
+
+### 4. Connect from Claude Code
+
+```bash
+claude mcp add --transport http parseable https://mcp.your-domain.com --scope user
+```
+
+### 5. Connect from Cursor / VS Code
+
+```json
+{
+  "mcpServers": {
+    "parseable": { "type": "http", "url": "https://mcp.your-domain.com" }
+  }
+}
+```
+
+---
+
+## How the OAuth flow works
+
+```
+MCP client → GET /.well-known/oauth-authorization-server  (discover endpoints)
+           → GET /oauth/authorize?...                      (redirect to /login)
+           → GET /login                                    (React UI, Clerk sign-in)
+           → Clerk OAuth (Google / LinkedIn / GitHub / email)
+           → GET /sso-callback                             (Clerk handshake)
+           → GET /post-auth                                (read session, forward to /oauth/callback)
+           → GET /oauth/callback                           (verify Clerk session, resolve workspace)
+           → POST /oauth/token                             (exchange code → access token)
+           → POST /                                        (MCP calls with Bearer token)
+```
+
+### How Clerk keys reach the browser
+
+`CLERK_SECRET_KEY` never leaves the server. `CLERK_PUBLISHABLE_KEY` is designed to be public — it's injected inline into `index.html` at serve time:
+
+```
+GET /login
+  → serveIndex() reads dist/ui/index.html
+  → injects: window.__PARSEABLE_CONFIG__ = {"publishableKey":"pk_live_...","publicBaseUrl":"https://..."}
+  → sends HTML to browser
+
+React reads window.__PARSEABLE_CONFIG__ synchronously → passes publishableKey to <ClerkProvider>
+```
+
+No separate `/config` endpoint. No network call from the browser to fetch keys.
+
+---
+
+## Environment variables
+
+### stdio mode
+
+| Var | Required | Default | Purpose |
+|-----|----------|---------|---------|
+| `PARSEABLE_URL` | ✅ | — | Parseable base URL |
+| `PARSEABLE_USERNAME` | ✅ | — | Basic auth username |
+| `PARSEABLE_PASSWORD` | ✅ | — | Basic auth password |
+| `PARSEABLE_DEFAULT_DATASET` | | — | Advisory default dataset |
+| `PARSEABLE_MAX_ROWS` | | 1000 | Hard cap on query rows |
+| `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP timeout (ms) |
+
+### HTTP + OAuth mode (additional)
+
+| Var | Required | Default | Purpose |
+|-----|----------|---------|---------|
+| `PORT` | | 8787 | HTTP listen port |
+| `MCP_PUBLIC_BASE_URL` | ✅ | — | Public URL of this server (used in OAuth redirects) |
+| `CLERK_PUBLISHABLE_KEY` | ✅ | — | Clerk `pk_live_` or `pk_test_` key |
+| `CLERK_SECRET_KEY` | ✅ | — | Clerk `sk_live_` or `sk_test_` key (server-side only) |
+
+### OpenTelemetry (optional)
+
+| Var | Default | Purpose |
+|-----|---------|---------|
+| `PARSEABLE_OTEL_ENABLED` | false | Enable trace export to Parseable |
+| `PARSEABLE_OTEL_ENDPOINT` | — | Parseable OTLP endpoint |
+| `PARSEABLE_OTEL_USERNAME` | — | Basic auth for OTLP |
+| `PARSEABLE_OTEL_PASSWORD` | — | Basic auth for OTLP |
+| `PARSEABLE_OTEL_TRACES_STREAM` | mcp-traces | Stream name for traces |
+| `PARSEABLE_OTEL_DEBUG` | false | Log OTLP export errors |
+
+Copy `.env.example` → `.env` for a full template.
+
+---
 
 ## Tools
 
 ### Discovery
 
-| Tool                 | Purpose                                                                    |
-| -------------------- | -------------------------------------------------------------------------- |
-| `list_datasets`      | List all log datasets on the server.                                       |
-| `get_dataset_schema` | Get column names + types for a dataset.                                    |
-| `get_dataset_info`   | Get dataset metadata (created_at, retention, owner, time window).          |
-| `get_dataset_stats`  | Get event count and storage bytes for a dataset.                           |
-| `sample_events`      | Return the most recent N events from a dataset (time-bounded, row-capped). |
+| Tool | Purpose |
+|------|---------|
+| `list_datasets` | List all log datasets |
+| `get_dataset_schema` | Column names + types |
+| `get_dataset_info` | Metadata (created_at, retention, time window) |
+| `get_dataset_stats` | Event count and storage bytes |
+| `sample_events` | Most recent N events (time-bounded, row-capped) |
 
 ### Query
 
-| Tool           | Purpose                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------ |
-| `query_sql`    | Run a SQL `SELECT` over a time window. DDL/DML blocked. Auto-injects `LIMIT`.              |
-| `query_promql` | Run PromQL instant or range query against a metrics dataset. Auto-routes by `start`+`end`. |
+| Tool | Purpose |
+|------|---------|
+| `query_sql` | SQL `SELECT` over a time window. DDL/DML blocked. Auto-injects `LIMIT`. |
+| `query_promql` | PromQL instant or range query against a metrics dataset |
 
 ### Alerts
 
-| Tool              | Purpose                                                                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_alerts`     | List all alerts with state, severity, tags.                                                                                                                            |
-| `get_alert`       | Get full config for one alert.                                                                                                                                         |
-| `list_alert_tags` | List all alert tags in use.                                                                                                                                            |
-| `enable_alert`    | Enable an alert.                                                                                                                                                       |
-| `disable_alert`   | Disable an alert.                                                                                                                                                      |
-| `evaluate_alert`  | Force-evaluate an alert now. **May fire real notifications.**                                                                                                          |
-| `create_alert`    | Create a new alert. Walks user through 8 questions (title, dataset, condition, window, frequency, severity, tags, targets), confirms assembled spec before submitting. |
+| Tool | Purpose |
+|------|---------|
+| `list_alerts` | List all alerts with state, severity, tags |
+| `get_alert` | Full config for one alert |
+| `list_alert_tags` | All alert tags in use |
+| `enable_alert` | Enable an alert |
+| `disable_alert` | Disable an alert |
+| `evaluate_alert` | Force-evaluate now. **May fire real notifications.** |
+| `create_alert` | Create alert via guided Q&A (8 questions, confirms before submit) |
 
 ### Alert targets
 
-Notification destinations referenced by alerts. Three supported types: **Slack**, **generic webhook**, **Alertmanager**.
-
-| Tool                  | Purpose                                                                                                                                            |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_alert_targets`  | List all configured targets with ID, name, type. Called automatically by `create_alert` so the user picks targets by name instead of typing UUIDs. |
-| `get_alert_target`    | Get full config for one target (endpoint, headers, auth, notification interval).                                                                   |
-| `create_alert_target` | Create a new Slack/webhook/Alertmanager target.                                                                                                    |
+| Tool | Purpose |
+|------|---------|
+| `list_alert_targets` | List targets (Slack, webhook, Alertmanager) |
+| `get_alert_target` | Full config for one target |
+| `create_alert_target` | Create a new Slack / webhook / Alertmanager target |
 
 ### Diagnostics
 
-| Tool            | Purpose                                                                                                                                               |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ping`          | Check server connectivity and return version/build info (`/about`), `/liveness`, `/readiness`. Use to debug MCP-server → Parseable connection issues. |
-| `explain_query` | Run `EXPLAIN` on a SQL query without executing it. Returns DataFusion plan for debugging slow queries, predicate pushdown, partition pruning.         |
+| Tool | Purpose |
+|------|---------|
+| `ping` | Check connectivity, return version + health |
+| `explain_query` | `EXPLAIN` a SQL query without executing it |
 
 ### RBAC (read-only)
 
-Inspect users, roles, and effective access. **No tools for creating, modifying, or deleting users/roles** — RBAC mutation stays in the Parseable UI/CLI by design.
-
-| Tool               | Purpose                                                       |
-| ------------------ | ------------------------------------------------------------- |
-| `list_users`       | List all registered users.                                    |
-| `get_user_roles`   | Get the roles assigned to a specific user.                    |
-| `list_roles`       | List all role names defined on the server.                    |
-| `get_role`         | Get the privilege definition for a role (actions + datasets). |
-| `get_default_role` | Get the default role assigned to new users.                   |
-
-These compose for permission audits: "Does user X have write access to dataset Y?" → call `get_user_roles(X)` → for each role call `get_role` → check if `Ingest` or `PutAlert` privilege covers Y.
+| Tool | Purpose |
+|------|---------|
+| `list_users` | List all users |
+| `get_user_roles` | Roles for a specific user |
+| `list_roles` | All role names |
+| `get_role` | Privilege definition for a role |
+| `get_default_role` | Default role for new users |
 
 ### Admin (read-only)
 
-Inspect cluster health and dataset lifecycle. **No tools for mutating cluster state or retention** — keep changes in UI/CLI by design.
+| Tool | Purpose |
+|------|---------|
+| `get_cluster_status` | All nodes with status (distributed mode) |
+| `get_cluster_metrics` | Aggregated ingest/query/storage metrics |
+| `get_retention` | Retention policy for a dataset |
 
-| Tool                  | Purpose                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| `get_cluster_status`  | List all nodes (Prism, Querier, Ingestor, Indexer) with status. Distributed mode only.            |
-| `get_cluster_metrics` | Aggregated metrics across all nodes (ingest rate, query latency, storage). Distributed mode only. |
-| `get_retention`       | Get retention policy for a dataset.                                                               |
+---
 
-## Prerequisites
-
-- Node.js 18+
-- A reachable Parseable server (cloud, BYOC, or self-hosted)
-
-## Install
-
-No install step — every MCP client invokes the server via `npx`, which fetches it on demand. The [Quickstart](#quickstart) above wires it into Claude Desktop / Cursor automatically. Skip ahead to **Client setup** below if you prefer manual config.
-
-For local development (hacking on the server itself):
-
-```bash
-git clone https://github.com/parseablehq/parseable-mcp-server.git
-cd parseable-mcp-server
-npm install
-npm run build
-node dist/server.js
-```
-
-## Configure
-
-All configuration via environment variables (set in your MCP client's config file, not a `.env`):
-
-| Var                          | Required | Default | Purpose                                       |
-| ---------------------------- | -------- | ------- | --------------------------------------------- |
-| `PARSEABLE_URL`              | ✅       | —       | Parseable server base URL, no trailing slash  |
-| `PARSEABLE_USERNAME`         | ✅       | —       | Basic auth username                           |
-| `PARSEABLE_PASSWORD`         | ✅       | —       | Basic auth password                           |
-| `PARSEABLE_DEFAULT_DATASET`  |          | —       | Scope a tool prompt to one dataset (advisory) |
-| `PARSEABLE_MAX_ROWS`         |          | 1000    | Hard cap on query result rows                 |
-| `PARSEABLE_QUERY_TIMEOUT_MS` |          | 30000   | HTTP request timeout                          |
-
-## Client setup
-
-Manual config — only needed if [Quickstart](#quickstart) doesn't cover your client (Claude Code, Codex, VS Code, Windsurf, Continue, Cline, Zed). The command and args are the same for every client — only the config file location and syntax differ.
+## Client setup — stdio
 
 ### Claude Desktop
 
-`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) · `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+`~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -153,8 +246,6 @@ Manual config — only needed if [Quickstart](#quickstart) doesn't cover your cl
   }
 }
 ```
-
-Restart Claude Desktop. Tools appear under the hammer icon.
 
 ### Claude Code
 
@@ -166,11 +257,9 @@ claude mcp add Parseable \
   -- npx -y @parseable/parseable-mcp-server
 ```
 
-Verify with `claude mcp list`.
-
 ### Cursor
 
-`~/.cursor/mcp.json` (global) or `<project>/.cursor/mcp.json` (per-project):
+`~/.cursor/mcp.json`:
 
 ```json
 {
@@ -188,26 +277,9 @@ Verify with `claude mcp list`.
 }
 ```
 
-Reload Cursor. Tools surface in chat.
+### VS Code
 
-### Codex CLI
-
-`~/.codex/config.toml`:
-
-```toml
-[mcp_servers.Parseable]
-command = "npx"
-args = ["-y", "@parseable/parseable-mcp-server"]
-
-[mcp_servers.Parseable.env]
-PARSEABLE_URL = "https://your-parseable.example.com"
-PARSEABLE_USERNAME = "admin"
-PARSEABLE_PASSWORD = "your-password"
-```
-
-### VS Code (Copilot Chat)
-
-`.vscode/mcp.json` in workspace, or user settings:
+`.vscode/mcp.json`:
 
 ```json
 {
@@ -226,74 +298,46 @@ PARSEABLE_PASSWORD = "your-password"
 }
 ```
 
-### Windsurf · Continue · Cline · Zed
+---
 
-Same shape as Cursor's `mcp.json`. Consult each client's MCP docs for the exact config file path.
-
-## Try it
-
-Once wired:
-
-- _"What datasets do I have in Parseable?"_
-- _"Show schema for `nginx_access`."_
-- _"Run SQL: count events per status code in `nginx_access` over the last hour."_
-- _"Plot rate(http_requests_total[5m]) from `otel_metrics` over last 30 min, step 1m."_
-- _"List my alerts and which ones are disabled."_
-- _"Disable alert `<id>`, too noisy."_
-- _"Create an alert that fires when 5xx count in `nginx_access` > 50 over 5 min, severity high, notify the ops Slack channel."_ — the client walks the 8-step Q&A, calls `list_alert_targets` to pick "ops Slack" by name, then submits.
-- _"What notification targets are configured?"_ — calls `list_alert_targets`.
-- _"Add a Slack target pointing at `https://hooks.slack.com/services/...` named ops-alerts."_ — calls `create_alert_target`.
-
-## Security notes
-
-- Basic-auth credentials live in the MCP client config in plaintext. Use a Parseable user scoped to the minimum permissions the tools need.
-- Mutating tools (`enable_alert`, `disable_alert`, `evaluate_alert`, `create_alert`) are NOT gated by env flag — every MCP client already shows per-call approval UI. `evaluate_alert` can fire real notifications; review the call before approving.
-- `query_sql` rejects DDL/DML keywords and injects a row `LIMIT`. Time window is mandatory.
-- This server makes outbound HTTPS calls to your Parseable instance only. No telemetry.
-
-## Develop
+## Development
 
 ```bash
-npm run dev          # tsc --watch
-npm start            # node dist/server.js
-npm test             # run unit tests
-npm run test:watch   # vitest watch mode
-npm run test:coverage
-npm run lint         # biome check
-npm run fix          # biome auto-fix + format
-npm run format       # biome format only
+git clone https://github.com/parseablehq/parseable-mcp-server.git
+cd parseable-mcp-server
+npm install
+cp .env.example .env    # fill in your values
+
+# Build
+npm run build           # server only (tsc)
+npm run build:ui        # React UI only (vite)
+npm run build:all       # both
+
+# Run
+node dist/server.js         # stdio mode
+node dist/server.js http    # HTTP + OAuth mode (port 8787)
+
+# Dev
+npm run dev             # tsc --watch
+npm run dev:ui          # vite dev server (proxies API to :8787)
+npm test
+npm run lint
+npm run fix             # biome auto-fix
 ```
 
-CI (GitHub Actions) runs lint + build + test on every push and PR to `main`, on Node 20.
+CI (GitHub Actions) runs lint + `build:all` + test on every push/PR to `main` on Node 22. On merge to `main`, Docker image is published to `ghcr.io/parseablehq/parseable-mcp-server`.
 
-## Alert creation flow
+---
 
-`create_alert` is Q&A-driven via tool description — works on every MCP client (Claude Desktop, Claude Code, Cursor, Codex, VS Code, etc.) since it relies only on the client reading the tool description, not on client-specific UI primitives.
+## Security
 
-When you ask the client to create an alert, it asks one question per turn:
+- Basic-auth credentials in stdio mode live in the MCP client config. Use a Parseable user scoped to minimum permissions.
+- `CLERK_SECRET_KEY` is server-side only — it never reaches the browser. The publishable key (`pk_`) is injected inline into HTML and is designed to be public.
+- `query_sql` blocks DDL/DML and enforces a row `LIMIT`. Time window is mandatory.
+- `evaluate_alert` can fire real notifications — review the call before approving.
+- No telemetry. Outbound calls go to your Parseable instance and Clerk only.
 
-1. **Title** — what the alert is called
-2. **Dataset** — which stream to watch (calls `list_datasets` if unsure)
-3. **Condition** — translates natural language into SQL + operator + numeric threshold, confirms back
-4. **Window** — how far back each check looks (e.g. `5m`, `15m`, `1h`)
-5. **Frequency** — how often to evaluate (integer minutes)
-6. **Severity** — `critical` / `high` / `medium` / `low`
-7. **Tags** — comma-separated, optional
-8. **Targets** — calls `list_alert_targets`, shows a numbered list, you pick by name
-
-Then it shows the fully assembled JSON spec, you confirm, and it submits via `create_alert`. The same flow works for `create_alert_target` (asks name → type → endpoint → type-specific fields).
-
-## Roadmap
-
-- Dashboards tier (`list_dashboards`, `get_dashboard`, `create_dashboard`, `add_dashboard_tile`)
-- Saved filters tier
-- Diagnostic tools (`ping`, `explain_query`)
-- Admin tier (cluster status, retention, users — opt-in)
-- `npm publish @parseable/mcp-server` (one-line install via `npx`)
-- Docker image
-- Streamable HTTP transport for hosted `mcp.parseable.com`
-- OAuth (replace Basic auth)
-- Submission to `modelcontextprotocol/servers` registry + Smithery
+---
 
 ## License
 

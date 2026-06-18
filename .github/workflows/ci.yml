@@ -13,10 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node 20
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install
@@ -25,8 +25,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build
-        run: npm run build
+      - name: Build (UI + server)
+        run: npm run build:all
 
       - name: Test
         run: npm test
