@@ -9,8 +9,7 @@ import type { Config } from "../src/config.js";
 
 const baseConfig: Config = {
   url: "http://example.test:8000",
-  username: "admin",
-  password: "pw",
+  apiKey: "key",
   maxRows: 1000,
   queryTimeoutMs: 5000,
 };
@@ -48,7 +47,7 @@ describe("parseErrorBody", () => {
 
 describe("classifyStatus", () => {
   it("401 → auth hint", () => {
-    expect(classifyStatus(401, "GET", "/alerts")).toMatch(/PARSEABLE_USERNAME/);
+    expect(classifyStatus(401, "GET", "/alerts")).toMatch(/PARSEABLE_API_KEY/);
   });
 
   it("403 → rbac hint", () => {
@@ -92,7 +91,7 @@ describe("ParseableClient request behavior", () => {
     vi.restoreAllMocks();
   });
 
-  it("sends Basic auth header", async () => {
+  it("sends API key header", async () => {
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValue(
       new Response("[]", {
@@ -104,7 +103,7 @@ describe("ParseableClient request behavior", () => {
     await client.listDatasets();
     const call = fetchMock.mock.calls[0];
     const headers = call[1].headers as Record<string, string>;
-    expect(headers.Authorization).toBe(`Basic ${Buffer.from("admin:pw").toString("base64")}`);
+    expect(headers["X-API-Key"]).toBe("key");
   });
 
   it("strips trailing slashes from URL", () => {
@@ -140,7 +139,7 @@ describe("ParseableClient request behavior", () => {
     expect(caught.name).toBe("ParseableError");
     expect(caught.status).toBe(401);
     expect(caught.message).toMatch(/bad creds/);
-    expect(caught.message).toMatch(/PARSEABLE_USERNAME/);
+    expect(caught.message).toMatch(/PARSEABLE_API_KEY/);
   });
 
   it("uses /prometheus/api/v1 base for promqlInstant", async () => {

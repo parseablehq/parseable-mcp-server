@@ -44,7 +44,7 @@ export function parseErrorBody(body: string): string {
 
 export function classifyStatus(status: number, _method: string, path: string): string | undefined {
   if (status === 401) {
-    return "Authentication failed. Check PARSEABLE_USERNAME / PARSEABLE_PASSWORD.";
+    return "Authentication failed. Check PARSEABLE_API_KEY.";
   }
   if (status === 403) {
     return "Authorized but not permitted. The user lacks the required RBAC action for this endpoint.";
@@ -87,8 +87,7 @@ export class ParseableClient {
       this.clerkSessionToken = opts.clerkSessionToken;
       this.workspaceId = opts.workspaceId;
     } else {
-      const token = Buffer.from(`${opts.username}:${opts.password}`).toString("base64");
-      this.authHeader = `Basic ${token}`;
+      this.authHeader = opts.apiKey;
     }
   }
 
@@ -125,7 +124,7 @@ export class ParseableClient {
   }
 
   private async authHeaders(): Promise<Record<string, string>> {
-    if (this.authHeader) return { Authorization: this.authHeader };
+    if (this.authHeader) return { "X-API-Key": this.authHeader };
     await this.ensureClerkBootstrap();
     return {
       "X-CLERK-SESSION-TOKEN": this.clerkSessionToken as string,

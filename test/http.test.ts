@@ -3,8 +3,7 @@ import { app } from "../src/http.js";
 
 const goodHeaders = {
   "x-parseable-url": "https://parseable.example.com",
-  "x-parseable-username": "admin",
-  "x-parseable-password": "secret",
+  "x-api-key": "secret",
 };
 
 function mcpReq(body: unknown, headers: Record<string, string> = goodHeaders): Request {

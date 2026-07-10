@@ -12,8 +12,7 @@ export interface ClientTarget {
 
 export interface InitArgs {
   url?: string;
-  username?: string;
-  password?: string;
+  apiKey?: string;
   client?: string;
 }
 
@@ -74,8 +73,7 @@ export function parseInitArgs(argv: string[]): InitArgs {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--url" && argv[i + 1]) args.url = argv[++i];
-    else if (a === "--username" && argv[i + 1]) args.username = argv[++i];
-    else if (a === "--password" && argv[i + 1]) args.password = argv[++i];
+    else if (a === "--api-key" && argv[i + 1]) args.apiKey = argv[++i];
     else if (a === "--client" && argv[i + 1]) args.client = argv[++i];
   }
   return args;
@@ -84,15 +82,14 @@ export function parseInitArgs(argv: string[]): InitArgs {
 export function mergeConfig(
   existing: Record<string, unknown>,
   configKey: "mcpServers" | "servers",
-  creds: { url: string; username: string; password: string },
+  creds: { url: string; apiKey: string },
 ): Record<string, unknown> {
   const entry = {
     command: "npx",
     args: ["-y", "@parseable/parseable-mcp-server"],
     env: {
       PARSEABLE_URL: creds.url,
-      PARSEABLE_USERNAME: creds.username,
-      PARSEABLE_PASSWORD: creds.password,
+      PARSEABLE_API_KEY: creds.apiKey,
     },
   };
 
@@ -101,10 +98,7 @@ export function mergeConfig(
   return { ...existing, [configKey]: servers };
 }
 
-function writeClientConfig(
-  target: ClientTarget,
-  creds: { url: string; username: string; password: string },
-): void {
+function writeClientConfig(target: ClientTarget, creds: { url: string; apiKey: string }): void {
   let existing: Record<string, unknown> = {};
   if (existsSync(target.configPath)) {
     try {
@@ -163,8 +157,7 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
   // 2. Credentials
   const answers = await inquirer.prompt<{
     url: string;
-    username: string;
-    password: string;
+    apiKey: string;
   }>(
     [
       !args.url && {
@@ -173,26 +166,19 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
         message: "Parseable URL:",
         validate: (v: string) => v.trim().length > 0 || "URL is required",
       },
-      !args.username && {
-        type: "input",
-        name: "username",
-        message: "Username:",
-        default: "admin",
-      },
-      !args.password && {
+      !args.apiKey && {
         type: "password",
-        name: "password",
-        message: "Password:",
+        name: "apiKey",
+        message: "API key:",
         mask: "*",
-        validate: (v: string) => v.length > 0 || "Password is required",
+        validate: (v: string) => v.length > 0 || "API key is required",
       },
     ].filter(Boolean) as Parameters<typeof inquirer.prompt>[0],
   );
 
   const creds = {
     url: args.url ?? answers.url,
-    username: args.username ?? answers.username,
-    password: args.password ?? answers.password,
+    apiKey: args.apiKey ?? answers.apiKey,
   };
 
   // 3. Write

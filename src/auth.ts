@@ -2,8 +2,7 @@ import { isIP } from "node:net";
 
 export interface RequestCreds {
   url: string;
-  username: string;
-  password: string;
+  apiKey: string;
 }
 
 export class AuthError extends Error {
@@ -32,18 +31,16 @@ export function parseAuthHeaders(
   headers: Headers | Record<string, string | string[] | undefined>,
 ): RequestCreds {
   const url = header(headers, "X-Parseable-URL");
-  const username = header(headers, "X-Parseable-Username");
-  const password = header(headers, "X-Parseable-Password");
+  const apiKey = header(headers, "X-API-Key");
 
   const missing: string[] = [];
   if (!url) missing.push("X-Parseable-URL");
-  if (!username) missing.push("X-Parseable-Username");
-  if (!password) missing.push("X-Parseable-Password");
+  if (!apiKey) missing.push("X-API-Key");
 
   if (missing.length) {
     throw new AuthError(
       401,
-      `Missing required header(s): ${missing.join(", ")}. Set X-Parseable-URL, X-Parseable-Username, X-Parseable-Password on your MCP connector.`,
+      `Missing required header(s): ${missing.join(", ")}. Set X-Parseable-URL and X-API-Key on your MCP connector.`,
     );
   }
 
@@ -59,8 +56,7 @@ export function parseAuthHeaders(
 
   return {
     url: (url as string).replace(/\/+$/, ""),
-    username: username as string,
-    password: password as string,
+    apiKey: apiKey as string,
   };
 }
 

@@ -6,7 +6,7 @@ Model Context Protocol server for [Parseable](https://www.parseable.com). Lets a
 
 | Mode | Transport | Auth | Use when |
 |------|-----------|------|----------|
-| `stdio` | Stdin/stdout | Basic auth via env vars | Claude Desktop, Cursor, VS Code, local clients |
+| `stdio` | Stdin/stdout | API key via env vars | Claude Desktop, Cursor, VS Code, local clients |
 | `http` | HTTP + SSE | OAuth 2.0 via Clerk | Claude Desktop custom connector, hosted deployments |
 
 ---
@@ -27,8 +27,7 @@ Scripted:
 npx -y @parseable/parseable-mcp-server init \
   --client claude-desktop \
   --url https://your-parseable.example.com \
-  --username admin \
-  --password "$PARSEABLE_PASSWORD"
+  --api-key "$PARSEABLE_API_KEY"
 ```
 
 Supported `--client` values: `claude-desktop`, `cursor`.
@@ -44,8 +43,7 @@ The HTTP mode serves a landing page, OAuth login UI, and the MCP endpoint — al
 ```bash
 # .env
 PARSEABLE_URL=https://your-parseable.example.com
-PARSEABLE_USERNAME=admin
-PARSEABLE_PASSWORD=your-password
+PARSEABLE_API_KEY=your-api-key
 
 PORT=8787
 MCP_PUBLIC_BASE_URL=https://mcp.your-domain.com   # public URL of this server
@@ -129,8 +127,7 @@ No separate `/config` endpoint. No network call from the browser to fetch keys.
 | Var | Required | Default | Purpose |
 |-----|----------|---------|---------|
 | `PARSEABLE_URL` | ✅ | — | Parseable base URL |
-| `PARSEABLE_USERNAME` | ✅ | — | Basic auth username |
-| `PARSEABLE_PASSWORD` | ✅ | — | Basic auth password |
+| `PARSEABLE_API_KEY` | ✅ | — | API key for self-hosted Parseable |
 | `PARSEABLE_DEFAULT_DATASET` | | — | Advisory default dataset |
 | `PARSEABLE_MAX_ROWS` | | 1000 | Hard cap on query rows |
 | `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP timeout (ms) |
@@ -239,8 +236,7 @@ Copy `.env.example` → `.env` for a full template.
       "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
-        "PARSEABLE_USERNAME": "admin",
-        "PARSEABLE_PASSWORD": "your-password"
+        "PARSEABLE_API_KEY": "your-api-key"
       }
     }
   }
@@ -252,8 +248,7 @@ Copy `.env.example` → `.env` for a full template.
 ```bash
 claude mcp add Parseable \
   --env PARSEABLE_URL=https://your-parseable.example.com \
-  --env PARSEABLE_USERNAME=admin \
-  --env PARSEABLE_PASSWORD=your-password \
+  --env PARSEABLE_API_KEY=your-api-key \
   -- npx -y @parseable/parseable-mcp-server
 ```
 
@@ -269,8 +264,7 @@ claude mcp add Parseable \
       "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
-        "PARSEABLE_USERNAME": "admin",
-        "PARSEABLE_PASSWORD": "your-password"
+        "PARSEABLE_API_KEY": "your-api-key"
       }
     }
   }
@@ -290,8 +284,7 @@ claude mcp add Parseable \
       "args": ["-y", "@parseable/parseable-mcp-server"],
       "env": {
         "PARSEABLE_URL": "https://your-parseable.example.com",
-        "PARSEABLE_USERNAME": "admin",
-        "PARSEABLE_PASSWORD": "your-password"
+        "PARSEABLE_API_KEY": "your-api-key"
       }
     }
   }

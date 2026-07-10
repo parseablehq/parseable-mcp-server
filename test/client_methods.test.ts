@@ -4,8 +4,7 @@ import type { Config } from "../src/config.js";
 
 const config: Config = {
   url: "http://example.test",
-  username: "admin",
-  password: "pw",
+  apiKey: "key",
   maxRows: 100,
   queryTimeoutMs: 5000,
 };

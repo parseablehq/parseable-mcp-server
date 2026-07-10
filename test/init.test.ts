@@ -2,21 +2,11 @@ import { describe, expect, it } from "vitest";
 import { getClientTargets, mergeConfig, parseInitArgs } from "../src/init.js";
 
 describe("parseInitArgs", () => {
-  it("parses --url --username --password --client", () => {
-    const a = parseInitArgs([
-      "--url",
-      "http://x",
-      "--username",
-      "admin",
-      "--password",
-      "pw",
-      "--client",
-      "cursor",
-    ]);
+  it("parses --url --api-key --client", () => {
+    const a = parseInitArgs(["--url", "http://x", "--api-key", "key", "--client", "cursor"]);
     expect(a).toEqual({
       url: "http://x",
-      username: "admin",
-      password: "pw",
+      apiKey: "key",
       client: "cursor",
     });
   });
@@ -88,7 +78,7 @@ describe("getClientTargets", () => {
 });
 
 describe("mergeConfig", () => {
-  const creds = { url: "http://x", username: "a", password: "b" };
+  const creds = { url: "http://x", apiKey: "key" };
 
   it("adds Parseable entry under mcpServers", () => {
     const merged = mergeConfig({}, "mcpServers", creds);
@@ -99,8 +89,7 @@ describe("mergeConfig", () => {
           args: ["-y", "@parseable/parseable-mcp-server"],
           env: {
             PARSEABLE_URL: "http://x",
-            PARSEABLE_USERNAME: "a",
-            PARSEABLE_PASSWORD: "b",
+            PARSEABLE_API_KEY: "key",
           },
         },
       },
@@ -137,7 +126,7 @@ describe("mergeConfig", () => {
     const merged = mergeConfig(
       { mcpServers: { Parseable: { command: "node", args: ["old.js"] } } },
       "mcpServers",
-      { url: "http://new", username: "a", password: "b" },
+      { url: "http://new", apiKey: "key" },
     );
     const servers = merged.mcpServers as Record<string, unknown>;
     const parseable = servers.Parseable as { env: Record<string, string> };

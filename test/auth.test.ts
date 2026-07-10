@@ -3,28 +3,24 @@ import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "../src/auth.js
 
 const goodHeaders = {
   "x-parseable-url": "https://parseable.example.com",
-  "x-parseable-username": "admin",
-  "x-parseable-password": "secret",
+  "x-api-key": "secret",
 };
 
 describe("parseAuthHeaders", () => {
   it("accepts a valid Headers instance", () => {
     const h = new Headers();
     h.set("X-Parseable-URL", "https://parseable.example.com");
-    h.set("X-Parseable-Username", "admin");
-    h.set("X-Parseable-Password", "secret");
+    h.set("X-API-Key", "secret");
     expect(parseAuthHeaders(h)).toEqual({
       url: "https://parseable.example.com",
-      username: "admin",
-      password: "secret",
+      apiKey: "secret",
     });
   });
 
   it("accepts a record with lowercase keys", () => {
     expect(parseAuthHeaders(goodHeaders)).toEqual({
       url: "https://parseable.example.com",
-      username: "admin",
-      password: "secret",
+      apiKey: "secret",
     });
   });
 
@@ -47,23 +43,13 @@ describe("parseAuthHeaders", () => {
     }
   });
 
-  it("throws 401 when X-Parseable-Username missing", () => {
+  it("throws 401 when X-API-Key missing", () => {
     try {
-      parseAuthHeaders({ ...goodHeaders, "x-parseable-username": undefined });
+      parseAuthHeaders({ ...goodHeaders, "x-api-key": undefined });
       throw new Error("should have thrown");
     } catch (err) {
       expect((err as AuthError).status).toBe(401);
-      expect((err as AuthError).message).toMatch(/X-Parseable-Username/);
-    }
-  });
-
-  it("throws 401 when X-Parseable-Password missing", () => {
-    try {
-      parseAuthHeaders({ ...goodHeaders, "x-parseable-password": undefined });
-      throw new Error("should have thrown");
-    } catch (err) {
-      expect((err as AuthError).status).toBe(401);
-      expect((err as AuthError).message).toMatch(/X-Parseable-Password/);
+      expect((err as AuthError).message).toMatch(/X-API-Key/);
     }
   });
 
@@ -74,8 +60,7 @@ describe("parseAuthHeaders", () => {
     } catch (err) {
       const msg = (err as AuthError).message;
       expect(msg).toMatch(/X-Parseable-URL/);
-      expect(msg).toMatch(/X-Parseable-Username/);
-      expect(msg).toMatch(/X-Parseable-Password/);
+      expect(msg).toMatch(/X-API-Key/);
     }
   });
 

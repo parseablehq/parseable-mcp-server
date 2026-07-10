@@ -24,8 +24,7 @@ HTTP MCP endpoint:
 
 Required headers for static Parseable credentials:
   X-Parseable-URL
-  X-Parseable-Username
-  X-Parseable-Password
+  X-API-Key
 `;
 
 export const app = new Hono();
@@ -46,6 +45,7 @@ app.use("/*", async (c, next) => {
 });
 
 app.get("/health", (c) => c.text("ok"));
+app.get("/readyz", (c) => c.text("ok"));
 
 // Cache the injected index.html — built once at first request, reused after.
 let _indexHtmlCache: string | null = null;
@@ -127,8 +127,7 @@ async function buildClerkClient(bearer: string): Promise<{
   client: ParseableClient;
   config: {
     url: string;
-    username: string;
-    password: string;
+    apiKey: string;
     maxRows: number;
     queryTimeoutMs: number;
   };
@@ -146,20 +145,18 @@ async function buildClerkClient(bearer: string): Promise<{
     client,
     config: {
       url: claims.url,
-      username: claims.sub,
-      password: "<clerk-session>",
+      apiKey: "<clerk-session>",
       maxRows: DEFAULT_MAX_ROWS,
       queryTimeoutMs: DEFAULT_QUERY_TIMEOUT_MS,
     },
   };
 }
 
-function buildBasicClient(reqHeaders: Headers): {
+function buildApiKeyClient(reqHeaders: Headers): {
   client: ParseableClient;
   config: {
     url: string;
-    username: string;
-    password: string;
+    apiKey: string;
     maxRows: number;
     queryTimeoutMs: number;
   };
@@ -172,8 +169,7 @@ function buildBasicClient(reqHeaders: Headers): {
   );
   const config = {
     url: creds.url,
-    username: creds.username,
-    password: creds.password,
+    apiKey: creds.apiKey,
     maxRows,
     queryTimeoutMs,
   };
@@ -186,7 +182,7 @@ async function handleMcpPost(c: Context) {
       .header("authorization")
       ?.replace(/^Bearer\s+/i, "")
       .trim();
-    const built = bearer ? await buildClerkClient(bearer) : buildBasicClient(c.req.raw.headers);
+    const built = bearer ? await buildClerkClient(bearer) : buildApiKeyClient(c.req.raw.headers);
 
     const mcp = buildMcpServer({ client: built.client, config: built.config });
 
@@ -209,7 +205,20 @@ app.post("/mcp", handleMcpPost);
 export async function startHttpServer(): Promise<void> {
   const port = Number(process.env.PORT ?? DEFAULT_PORT);
   const { serve } = await import("@hono/node-server");
-  serve({ fetch: app.fetch, port }, (info) => {
+  const server = serve({ fetch: app.fetch, port }, (info) => {
     console.error(`parseable-mcp-server HTTP listening on :${info.port}`);
   });
+
+  const shutdown = () => {
+    console.error("[mcp] shutting down gracefully");
+    server.close(() => {
+      console.error("[mcp] server closed");
+      process.exit(0);
+    });
+    // Force exit if connections don't drain within 10s
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }

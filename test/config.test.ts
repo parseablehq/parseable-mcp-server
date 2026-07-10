@@ -3,8 +3,7 @@ import { loadConfig } from "../src/config.js";
 
 const KEYS = [
   "PARSEABLE_URL",
-  "PARSEABLE_USERNAME",
-  "PARSEABLE_PASSWORD",
+  "PARSEABLE_API_KEY",
   "PARSEABLE_DEFAULT_DATASET",
   "PARSEABLE_MAX_ROWS",
   "PARSEABLE_QUERY_TIMEOUT_MS",
@@ -26,36 +25,25 @@ afterEach(() => {
 describe("loadConfig", () => {
   it("requires PARSEABLE_URL", () => {
     delete process.env.PARSEABLE_URL;
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     expect(() => loadConfig()).toThrow(/PARSEABLE_URL/);
   });
 
-  it("requires PARSEABLE_USERNAME", () => {
+  it("requires PARSEABLE_API_KEY", () => {
     process.env.PARSEABLE_URL = "http://x";
-    delete process.env.PARSEABLE_USERNAME;
-    process.env.PARSEABLE_PASSWORD = "b";
-    expect(() => loadConfig()).toThrow(/PARSEABLE_USERNAME/);
-  });
-
-  it("requires PARSEABLE_PASSWORD", () => {
-    process.env.PARSEABLE_URL = "http://x";
-    process.env.PARSEABLE_USERNAME = "a";
-    delete process.env.PARSEABLE_PASSWORD;
-    expect(() => loadConfig()).toThrow(/PARSEABLE_PASSWORD/);
+    delete process.env.PARSEABLE_API_KEY;
+    expect(() => loadConfig()).toThrow(/PARSEABLE_API_KEY/);
   });
 
   it("strips trailing slashes from url", () => {
     process.env.PARSEABLE_URL = "http://x//";
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     expect(loadConfig().url).toBe("http://x");
   });
 
   it("applies default maxRows + timeout", () => {
     process.env.PARSEABLE_URL = "http://x";
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     delete process.env.PARSEABLE_MAX_ROWS;
     delete process.env.PARSEABLE_QUERY_TIMEOUT_MS;
     const c = loadConfig();
@@ -65,24 +53,21 @@ describe("loadConfig", () => {
 
   it("honors PARSEABLE_MAX_ROWS override", () => {
     process.env.PARSEABLE_URL = "http://x";
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     process.env.PARSEABLE_MAX_ROWS = "50";
     expect(loadConfig().maxRows).toBe(50);
   });
 
   it("passes through PARSEABLE_DEFAULT_DATASET", () => {
     process.env.PARSEABLE_URL = "http://x";
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     process.env.PARSEABLE_DEFAULT_DATASET = "my_logs";
     expect(loadConfig().defaultDataset).toBe("my_logs");
   });
 
   it("treats empty default dataset as undefined", () => {
     process.env.PARSEABLE_URL = "http://x";
-    process.env.PARSEABLE_USERNAME = "a";
-    process.env.PARSEABLE_PASSWORD = "b";
+    process.env.PARSEABLE_API_KEY = "key";
     process.env.PARSEABLE_DEFAULT_DATASET = "";
     expect(loadConfig().defaultDataset).toBeUndefined();
   });
