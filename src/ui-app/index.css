@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,300..700;1,300..700&display=swap');
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,300..700;1,300..700&display=swap");
+@import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", sans-serif;
+  --font-sans: "Open Sans", sans-serif;
   --font-inter: Inter, sans-serif;
   --breakpoint-sm: 760px;
   --breakpoint-md: 1080px;
@@ -43,5 +43,12 @@
   --radius-2xl: 28px;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+}
