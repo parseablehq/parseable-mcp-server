@@ -17,8 +17,8 @@ export function LandingPage() {
           <Hero />
           <QuickSetup />
         </div>
-        <TwoWays />
         <SlackBot />
+        <TwoWays />
         <Prompts />
         <FeatureGrid />
         <CTABanner />

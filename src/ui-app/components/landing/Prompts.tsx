@@ -96,7 +96,7 @@ export function Prompts() {
 
   return (
     <section className="mt-48">
-      <div className="max-w-page mx-auto">
+      <div className="max-w-page mx-auto px-4 md:px-0">
         <div className="flex flex-col items-center text-center gap-4 mb-10">
           <h2
             className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
@@ -122,7 +122,7 @@ export function Prompts() {
               type="button"
               onClick={() => setCategory(cat)}
               aria-pressed={category === cat}
-              className={`px-3.5 py-1.5 rounded font-inter text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C] ${
+              className={`px-3.5 py-1.5 rounded-[8px] font-inter text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C] ${
                 category === cat
                   ? "bg-[#3A3A8C] text-white"
                   : "border border-black/[0.08] text-[#5E5F6E] hover:text-[#14151A] hover:border-black/20"

@@ -1,7 +1,7 @@
 export function Hero() {
   return (
     <section className="pt-32 pb-0">
-      <div className="max-w-page mx-auto flex flex-col items-center text-center gap-6">
+      <div className="max-w-page mx-auto px-4 md:px-0 flex flex-col items-center text-center gap-6">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-black/8 bg-white">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00A896]" />

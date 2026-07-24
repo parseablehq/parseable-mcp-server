@@ -3,7 +3,7 @@ import { IconArrowUpRight } from "@tabler/icons-react";
 export function SlackBot() {
   return (
     <section className="mt-40">
-      <div className="max-w-page mx-auto">
+      <div className="max-w-page mx-auto px-4 md:px-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           {/* Left: text */}
           <div className="flex flex-col gap-6">
@@ -61,7 +61,7 @@ export function SlackBot() {
           </div>
 
           {/* Right: mock Slack thread */}
-          <div className="rounded-2xl border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="rounded-xl border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.06)] overflow-hidden">
             {/* Slack header bar */}
             <div
               className="flex items-center gap-2 px-4 py-3 border-b border-black/[0.06]"

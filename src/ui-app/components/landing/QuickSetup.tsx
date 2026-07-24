@@ -42,9 +42,8 @@ const CLIENT_ICONS: Record<string, ReactNode> = {
     <img src="/assets/clients/windsurf-mono.svg" width={20} height={20} alt="" aria-hidden="true" />
   ),
   "Slack Bot": (
-    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3.362 10.11c0 .845-.69 1.528-1.543 1.528-.853 0-1.543-.683-1.543-1.528 0-.845.69-1.528 1.543-1.528H3.36v1.528zM4.144 10.11c0-.845.69-1.528 1.543-1.528.853 0 1.543.683 1.543 1.528v3.82c0 .844-.69 1.527-1.543 1.527-.853 0-1.543-.683-1.543-1.528V10.11zM5.687 3.362c-.853 0-1.543-.69-1.543-1.543C4.144.666 4.834 0 5.687 0c.853 0 1.543.666 1.543 1.52v1.842H5.687zM5.687 4.144c.853 0 1.543.69 1.543 1.543 0 .853-.69 1.543-1.543 1.543H1.866C1.013 7.23.323 6.54.323 5.687c0-.853.69-1.543 1.543-1.543h3.821zM12.435 5.687c0-.853.69-1.543 1.543-1.543.853 0 1.543.69 1.543 1.543 0 .853-.69 1.543-1.543 1.543h-1.543V5.687zM11.652 5.687c0 .853-.69 1.543-1.543 1.543-.853 0-1.543-.69-1.543-1.543V1.866C8.566 1.013 9.256.323 10.109.323c.853 0 1.543.69 1.543 1.543v3.821zM10.109 12.435c.853 0 1.543.69 1.543 1.543 0 .853-.69 1.543-1.543 1.543-.853 0-1.543-.69-1.543-1.543v-1.543h1.543zM10.109 11.652c-.853 0-1.543-.69-1.543-1.543 0-.853.69-1.543 1.543-1.543h3.821c.853 0 1.543.69 1.543 1.543 0 .853-.69 1.543-1.543 1.543h-3.821z" fill="#E01E5A"/>
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/assets/clients/slack.svg" width={18} height={18} alt="" aria-hidden="true" />
   ),
 };
 
@@ -186,11 +185,11 @@ export function QuickSetup() {
 
   return (
     <section className="mt-16 pb-8">
-      <div className="max-w-[900px] mx-auto">
-        <div className="rounded-2xl overflow-hidden border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.07)]">
+      <div className="max-w-[900px] mx-auto px-4 md:px-0">
+        <div className="rounded-xl overflow-hidden border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.07)]">
           {/* Tabs */}
-          <div className="flex items-center justify-center border-b border-black/[0.06] px-6 gap-0">
-            <div className="flex gap-0" role="tablist">
+          <div className="flex items-center justify-center border-b border-black/[0.06] px-6 gap-0 overflow-x-auto">
+            <div className="flex gap-0 min-w-max" role="tablist">
               {CLIENTS.map((client) => (
                 <button
                   key={client}

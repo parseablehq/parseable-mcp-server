@@ -3,7 +3,7 @@ import { Link } from "../ui/Link";
 export function Footer() {
   return (
     <footer className="border-t border-black/[0.06] py-4">
-      <div className="max-w-page mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="max-w-page mx-auto px-4 md:px-0 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="font-inter text-sm text-black/40">
           © {new Date().getFullYear()} Parseable, Inc.
         </p>

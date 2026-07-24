@@ -21,7 +21,7 @@ export function Nav() {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-page mx-auto h-14 flex items-center justify-between">
+      <div className="max-w-page mx-auto px-4 md:px-0 h-14 flex items-center justify-between">
         <Link
           href="https://parseable.com"
           aria-label="Parseable home"

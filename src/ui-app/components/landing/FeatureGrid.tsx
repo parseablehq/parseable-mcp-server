@@ -61,7 +61,7 @@ export function FeatureGrid() {
           "linear-gradient(180deg, #FFFFFF 0%, rgba(241, 231, 255, 0.8) 100%)",
       }}
     >
-      <div className="max-w-page mx-auto">
+      <div className="max-w-page mx-auto px-4 md:px-0">
         <div className="flex flex-col items-center text-center gap-4 mb-14">
           <h2
             className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
@@ -75,7 +75,7 @@ export function FeatureGrid() {
           {FEATURES.map(({ icon, iconColor, iconBg, title, desc }) => (
             <div
               key={title}
-              className="flex flex-col gap-4 p-7 rounded-xl border border-black/[0.06] bg-white shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_0_rgba(0,0,0,0.07)] hover:border-black/[0.1] transition-all"
+              className="flex flex-col gap-4 p-7 rounded-xl border border-black/[0.06] bg-white hover:border-black/[0.1] transition-all"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
