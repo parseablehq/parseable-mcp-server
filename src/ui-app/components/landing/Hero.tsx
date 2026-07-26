@@ -21,7 +21,7 @@ export function Hero() {
         {/* Description */}
         <p className="max-w-2xl font-inter text-base text-black/60 leading-7">
           Connect Claude, Cursor, or any MCP-compatible agent to Parseable.
-          Query terabytes of logs, metrics, and traces in natural language — at
+          Query terabytes of logs, metrics, and traces in natural language - at
           sub-second speed.
         </p>
       </div>

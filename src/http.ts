@@ -47,7 +47,7 @@ app.use("/*", async (c, next) => {
 app.get("/health", (c) => c.text("ok"));
 app.get("/readyz", (c) => c.text("ok"));
 
-// Cache the injected index.html — built once at first request, reused after.
+// Cache the injected index.html - built once at first request, reused after.
 let _indexHtmlCache: string | null = null;
 
 function buildIndexHtml(): string {

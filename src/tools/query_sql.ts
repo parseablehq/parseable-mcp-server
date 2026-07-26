@@ -6,7 +6,7 @@ const schema = {
     .string()
     .min(1)
     .describe(
-      'SQL SELECT query. Reference the dataset as a quoted table name, e.g. SELECT * FROM "my_dataset". DataFusion SQL dialect. SELECT only — DDL/DML rejected.',
+      'SQL SELECT query. Reference the dataset as a quoted table name, e.g. SELECT * FROM "my_dataset". DataFusion SQL dialect. SELECT only - DDL/DML rejected.',
     ),
   startTime: z
     .string()

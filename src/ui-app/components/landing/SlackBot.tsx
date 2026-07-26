@@ -15,13 +15,13 @@ export function SlackBot() {
             </h2>
             <p className="font-inter text-base text-black/50 leading-7">
               Ask anything about your infrastructure directly in Slack. Query
-              logs, metrics, traces, and alerts in plain English — the Parseable
+              logs, metrics, traces, and alerts in plain English - the Parseable
               bot responds with real data from your stack, right in the thread.
             </p>
             <ul className="flex flex-col gap-3">
               {[
                 "Ask questions in plain English, get answers from your observability data",
-                "Works inside any channel — alert threads, incidents, on-call channels",
+                "Works inside any channel - alert threads, incidents, on-call channels",
                 "Integrates with PagerDuty, Grafana, and custom webhooks",
                 "Respects your team's RBAC permissions",
               ].map((item) => (
@@ -64,7 +64,7 @@ export function SlackBot() {
           <div className="rounded-xl border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.06)] overflow-hidden">
             {/* Slack header bar */}
             <div
-              className="flex items-center gap-2 px-4 py-3 border-b border-black/[0.06]"
+              className="flex items-center gap-2 px-4 py-3 border-b border-black/6"
               style={{ background: "#3F0E40" }}
             >
               <div className="flex gap-1.5">
@@ -111,7 +111,7 @@ export function SlackBot() {
                   <p className="font-inter text-[13px] text-[#1D1C1D] leading-5">
                     🔴 <span className="font-semibold">P1 alert:</span> Error
                     rate on{" "}
-                    <code className="text-xs bg-black/[0.06] px-1 rounded">
+                    <code className="text-xs bg-black/6 px-1 rounded">
                       api-gateway
                     </code>{" "}
                     exceeded 5% for 3 min
@@ -143,7 +143,7 @@ export function SlackBot() {
               {/* Bot response */}
               <div className="flex items-start gap-3">
                 <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-black/[0.08]"
+                  className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-black/8"
                   style={{ background: "#F4F4F5" }}
                 >
                   <img
@@ -159,7 +159,7 @@ export function SlackBot() {
                     <span className="font-inter text-[13px] font-semibold text-[#1D1C1D]">
                       Parseable
                     </span>
-                    <span className="font-inter text-[11px] text-white bg-[#3A3A8C] px-1.5 py-0.5 rounded text-[10px]">
+                    <span className="font-inter text-white bg-[#3A3A8C] px-1.5 py-0.5 rounded text-[10px]">
                       App
                     </span>
                     <span className="font-inter text-[11px] text-black/30">
@@ -175,7 +175,7 @@ export function SlackBot() {
                       <span className="font-semibold text-[#DC2626]">
                         847 errors
                       </span>{" "}
-                      in the last 10 min — 94% from one route:
+                      in the last 10 min - 94% from one route:
                     </p>
                     <pre
                       className="text-[11px] text-[#27272A] overflow-x-auto"

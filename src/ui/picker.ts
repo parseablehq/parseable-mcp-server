@@ -52,8 +52,7 @@ export function renderWorkspacePicker(opts: {
       const name = esc(w.workspace_name);
       const plan = esc(w.plan);
       const url = esc(w.prism_url);
-      const disabled =
-        w.state !== "running" ? "opacity-60 pointer-events-none" : "";
+      const disabled = w.state !== "running" ? "opacity-60 pointer-events-none" : "";
       return `
 <label class="block ${disabled}">
   <input type="radio" name="workspace_id" value="${id}" class="peer sr-only" ${w.state === "running" ? "" : "disabled"} />

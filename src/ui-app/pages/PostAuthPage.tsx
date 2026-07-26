@@ -13,7 +13,7 @@ function PostAuth({ callbackBase }: { callbackBase: string }) {
     function go() {
       try {
         const token = sessionStorage.getItem("parseable_mcp_flow_token");
-        if (!token) { setError("Missing flow_token — restart the connector from Claude."); return; }
+        if (!token) { setError("Missing flow_token - restart the connector from Claude."); return; }
         window.location.replace(`${callbackBase}/oauth/callback?flow_token=${encodeURIComponent(token)}`);
       } catch (e: unknown) {
         setError((e as Error).message ?? "Unknown error");

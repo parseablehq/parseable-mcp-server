@@ -45,7 +45,7 @@ oauth.get("/.well-known/oauth-authorization-server", (c) => {
 });
 
 oauth.post("/oauth/register", async (c) => {
-  // Dynamic Client Registration (RFC 7591) — stub: every client gets a generated id.
+  // Dynamic Client Registration (RFC 7591) - stub: every client gets a generated id.
   // We rely on PKCE + redirect_uri whitelist (caller's own URI) for actual security.
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
@@ -90,7 +90,7 @@ oauth.get("/oauth/authorize", async (c) => {
   return c.redirect(loginUrl, 302);
 });
 
-// /login is served as SPA by http.ts — no handler needed here.
+// /login is served as SPA by http.ts - no handler needed here.
 
 // Safety alias: Clerk staging instance has "Sign-in URL" = /signin (matches Prism's
 // SPA route). If Clerk-js ever auto-navigates to /signin here, bounce back to /login
@@ -109,7 +109,7 @@ oauth.get("/signin", (c) => {
 </body></html>`);
 });
 
-// /sso-callback and /post-auth are served as SPA by http.ts — no handlers needed here.
+// /sso-callback and /post-auth are served as SPA by http.ts - no handlers needed here.
 
 oauth.get("/oauth/callback", async (c) => {
   const flowToken = c.req.query("flow_token");

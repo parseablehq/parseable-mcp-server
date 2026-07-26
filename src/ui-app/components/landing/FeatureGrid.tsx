@@ -27,7 +27,7 @@ const FEATURES = [
     iconColor: "#0891B2",
     iconBg: "rgba(8,145,178,0.08)",
     title: "Full tool surface",
-    desc: "Datasets, alerts, RBAC roles, and cluster health are all exposed — not just raw log search.",
+    desc: "Datasets, alerts, RBAC roles, and cluster health are all exposed - not just raw log search.",
   },
   {
     icon: <IconShieldCheck size={20} stroke={1.5} aria-hidden="true" />,
@@ -75,7 +75,7 @@ export function FeatureGrid() {
           {FEATURES.map(({ icon, iconColor, iconBg, title, desc }) => (
             <div
               key={title}
-              className="flex flex-col gap-4 p-7 rounded-xl border border-black/[0.06] bg-white hover:border-black/[0.1] transition-all"
+              className="flex flex-col gap-4 p-7 rounded-xl border border-black/[0.06] bg-white hover:border-black/10 transition-all"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"

@@ -15,7 +15,7 @@ export function CTABanner() {
             Your observability data deserves better than a dashboard
           </h2>
           <p className="font-inter text-base font-normal text-black/60 leading-7 max-w-xl">
-            Connect Parseable to Claude, Cursor, or any MCP-compatible agent and investigate incidents across logs, metrics, traces, and alerts — in natural language, without switching context.
+            Connect Parseable to Claude, Cursor, or any MCP-compatible agent and investigate incidents across logs, metrics, traces, and alerts - in natural language, without switching context.
           </p>
           <div className="flex gap-3 mt-2 flex-wrap justify-center">
             <Link

@@ -106,7 +106,7 @@ describe("HTTP /mcp with mocked upstream", () => {
     const res = await app.fetch(mcpReq(initBody));
     expect(res.status).toBe(200);
     const text = await res.text();
-    // SSE-encoded response — parse the data line
+    // SSE-encoded response - parse the data line
     const dataLine = text.split("\n").find((l) => l.startsWith("data:"));
     expect(dataLine).toBeDefined();
     const payload = JSON.parse((dataLine as string).slice(5).trim());

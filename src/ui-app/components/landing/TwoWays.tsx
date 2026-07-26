@@ -68,7 +68,7 @@ function Demo() {
           </h2>
           <p className="max-w-lg font-inter text-base text-black/60 leading-7">
             Ask a question in plain English. The MCP server translates it to
-            SQL, queries Parseable, and returns structured results — right in
+            SQL, queries Parseable, and returns structured results - right in
             your AI client.
           </p>
         </div>
@@ -85,7 +85,7 @@ function Demo() {
           {/* Tool call chip */}
           <div className="flex justify-start">
             <div
-              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-black/[0.08] bg-white font-mono text-xs text-[#5E5F6E]"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-black/8 bg-white font-mono text-xs text-[#5E5F6E]"
               style={{
                 fontFamily: '"JetBrains Mono", ui-monospace, monospace',
               }}
@@ -106,8 +106,8 @@ function Demo() {
           </div>
 
           {/* Result table */}
-          <div className="rounded-xl border border-black/[0.08] overflow-hidden bg-white">
-            <div className="px-4 py-2.5 border-b border-black/[0.06] flex items-center justify-between">
+          <div className="rounded-xl border border-black/8 overflow-hidden bg-white">
+            <div className="px-4 py-2.5 border-b border-black/6 flex items-center justify-between">
               <span className="font-inter text-xs font-medium text-[#5E5F6E]">
                 Result · 5 rows
               </span>
@@ -123,7 +123,7 @@ function Demo() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs font-inter">
                 <thead>
-                  <tr className="border-b border-black/[0.06] bg-black/[0.02]">
+                  <tr className="border-b border-black/6 bg-black/2">
                     <th className="text-left px-4 py-2 font-medium text-[#5E5F6E] whitespace-nowrap">
                       Timestamp
                     </th>
@@ -142,7 +142,7 @@ function Demo() {
                   {DEMO_LOG_ROWS.map((row, i) => (
                     <tr
                       key={i}
-                      className="border-b border-black/[0.04] last:border-0"
+                      className="border-b border-black/4 last:border-0"
                     >
                       <td
                         className="px-4 py-2 font-mono text-black/50 whitespace-nowrap"
@@ -161,7 +161,7 @@ function Demo() {
                           {row.level}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-black/60 max-w-[240px] truncate">
+                      <td className="px-4 py-2 text-black/60 max-w-60 truncate">
                         {row.msg}
                       </td>
                     </tr>
@@ -173,12 +173,12 @@ function Demo() {
 
           {/* Agent response */}
           <div className="flex justify-start">
-            <div className="max-w-lg bg-white border border-black/[0.08] rounded-xl rounded-tl-sm px-4 py-3 font-inter text-sm leading-6 text-[#14151A]">
+            <div className="max-w-lg bg-white border border-black/8 rounded-xl rounded-tl-sm px-4 py-3 font-inter text-sm leading-6 text-[#14151A]">
               <p>
                 The payment service is experiencing repeated Stripe API timeouts
-                — 4 of the 5 recent errors are
+                - 4 of the 5 recent errors are
                 <code
-                  className="mx-1 px-1 py-0.5 rounded text-xs bg-black/[0.05] font-mono"
+                  className="mx-1 px-1 py-0.5 rounded text-xs bg-black/5 font-mono"
                   style={{
                     fontFamily: '"JetBrains Mono", ui-monospace, monospace',
                   }}
@@ -243,7 +243,7 @@ export function TwoWays() {
 
         {/* Tab toggle */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex rounded-lg p-1 border border-black/[0.07] bg-black/[0.02]">
+          <div className="inline-flex rounded-lg p-1 border border-black/[0.07] bg-black/2">
             {(["hosted", "local"] as const).map((tab) => (
               <button
                 key={tab}
@@ -289,13 +289,13 @@ export function TwoWays() {
                     Hosted MCP
                   </h3>
                   <p className="font-inter text-sm text-black/55 leading-6">
-                    Parseable runs the MCP server for you. Connect using OAuth —
+                    Parseable runs the MCP server for you. Connect using OAuth -
                     no infrastructure to manage.
                   </p>
                 </div>
                 <ul className="flex flex-col gap-3">
                   {[
-                    "OAuth 2.0 — same login as Parseable",
+                    "OAuth 2.0 - same login as Parseable",
                     "No local dependencies, nothing to install",
                     "Managed by Parseable, always up to date",
                     "Works with Parseable Cloud accounts",

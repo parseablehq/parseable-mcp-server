@@ -416,7 +416,7 @@ export function renderPostAuthPage(opts: {
     try {
       var token = sessionStorage.getItem("parseable_mcp_flow_token");
       if (!token) {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="background:#fff;border-radius:12px;padding:2rem;text-align:center;max-width:24rem"><p style="color:#ef4444;font-size:0.875rem">Missing flow_token — restart the connector from Claude.</p></div></div>';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><div style="background:#fff;border-radius:12px;padding:2rem;text-align:center;max-width:24rem"><p style="color:#ef4444;font-size:0.875rem">Missing flow_token - restart the connector from Claude.</p></div></div>';
         return;
       }
       window.location.replace("${callback}?flow_token=" + encodeURIComponent(token));
