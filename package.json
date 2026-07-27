@@ -28,32 +28,29 @@
     "prepublishOnly": "npm run build && npm run lint && npm test"
   },
   "dependencies": {
-    "@clerk/backend": "^3.4.9",
-    "@hono/node-server": "^2.0.2",
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "dotenv": "^16.4.5",
-    "hono": "^4.12.19",
+    "@hono/node-server": "^2.0.12",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^16.6.1",
+    "hono": "^4.12.32",
     "inquirer": "^13.4.3",
-    "jose": "^6.2.3",
-    "zod": "^3.23.8"
+    "jose": "^6.2.4",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.15",
-    "@clerk/clerk-react": "^5.61.8",
-    "@tailwindcss/vite": "^4.3.1",
-    "@types/inquirer": "^9.0.9",
-    "@types/node": "^22.10.0",
+    "@biomejs/biome": "^2.5.5",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/inquirer": "^9.0.10",
+    "@types/node": "^22.20.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.6",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.0",
-    "tailwindcss": "^4.3.1",
-    "typescript": "^5.7.2",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.6"
+    "@vitejs/plugin-react": "^6.0.4",
+    "@vitest/coverage-v8": "^4.1.10",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18"

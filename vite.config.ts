@@ -10,10 +10,4 @@ export default defineConfig({
     outDir: resolve(__dirname, "dist/ui"),
     emptyOutDir: true,
   },
-  server: {
-    proxy: {
-      "/ui-config": "http://localhost:8787",
-      "/oauth": "http://localhost:8787",
-    },
-  },
 });
