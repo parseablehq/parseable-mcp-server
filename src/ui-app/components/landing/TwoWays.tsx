@@ -20,6 +20,9 @@ function useCopy() {
 }
 
 const HOSTED_URL = `${window.location.origin}/mcp`;
+const PARSEABLE_URL = "https://your-parseable.example.com";
+const API_KEY = "your-parseable-api-key";
+const HOSTED_COMMAND = `claude mcp add --transport http parseable ${HOSTED_URL} --scope user --header "X-Parseable-URL: ${PARSEABLE_URL}" --header "X-API-Key: ${API_KEY}"`;
 
 const DEMO_LOG_ROWS = [
   {
@@ -212,10 +215,10 @@ export function TwoWays() {
       mcpServers: {
         parseable: {
           command: "npx",
-          args: ["-y", "@parseablehq/mcp"],
+          args: ["-y", "@parseable/parseable-mcp-server"],
           env: {
             PARSEABLE_URL: "https://your-instance.parseable.com",
-            PARSEABLE_TOKEN: "your-token",
+            PARSEABLE_API_KEY: "your-api-key",
           },
         },
       },
@@ -236,8 +239,8 @@ export function TwoWays() {
             Two ways to connect
           </h2>
           <p className="max-w-lg font-inter text-base text-black/50 leading-7">
-            Use the hosted MCP server for the fastest path, or run the
-            open-source server locally when you need full control.
+            Connect to a deployed MCP server over HTTP, or run the open-source
+            server locally over stdio.
           </p>
         </div>
 
@@ -260,7 +263,7 @@ export function TwoWays() {
                 ) : (
                   <IconTerminal2 size={15} stroke={1.5} />
                 )}
-                {tab === "hosted" ? "Hosted MCP" : "Local MCP"}
+                {tab === "hosted" ? "Remote MCP" : "Local MCP"}
               </button>
             ))}
           </div>
@@ -279,26 +282,26 @@ export function TwoWays() {
                     color: "#B45309",
                   }}
                 >
-                  Recommended
+                  Streamable HTTP
                 </span>
                 <div>
                   <h3
                     className="font-sans text-2xl font-medium text-[#14151A] mb-2"
                     style={{ fontFamily: '"Open Sans", sans-serif' }}
                   >
-                    Hosted MCP
+                    Remote MCP
                   </h3>
                   <p className="font-inter text-sm text-black/55 leading-6">
-                    Parseable runs the MCP server for you. Connect using OAuth -
-                    no infrastructure to manage.
+                    Connect to this deployed MCP endpoint. Each request supplies
+                    your Parseable URL and API key as headers.
                   </p>
                 </div>
                 <ul className="flex flex-col gap-3">
                   {[
-                    "OAuth 2.0 - same login as Parseable",
-                    "No local dependencies, nothing to install",
-                    "Managed by Parseable, always up to date",
-                    "Works with Parseable Cloud accounts",
+                    "Direct Parseable API key authentication",
+                    "No MCP server installation on the client",
+                    "Works with Parseable Cloud and self-hosted instances",
+                    "Credentials remain in your MCP client configuration",
                   ].map((item) => (
                     <li
                       key={item}
@@ -329,7 +332,7 @@ export function TwoWays() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-[#3A3A8C] hover:text-[#2F2F70] hover:underline transition-colors mt-2"
                 >
-                  Hosted MCP setup guide <IconArrowUpRight size={14} />
+                  Remote MCP setup guide <IconArrowUpRight size={14} />
                 </a>
               </>
             ) : (
@@ -421,7 +424,7 @@ export function TwoWays() {
                         type="button"
                         onClick={() =>
                           copy(
-                            `claude mcp add --transport http parseable ${HOSTED_URL}`,
+                            HOSTED_COMMAND,
                             "tw-step1",
                           )
                         }
@@ -442,7 +445,7 @@ export function TwoWays() {
                       className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>{`claude mcp add --transport http parseable ${HOSTED_URL}`}</code>
+                      <code>{HOSTED_COMMAND}</code>
                     </pre>
                   </div>
                 </div>
@@ -453,14 +456,14 @@ export function TwoWays() {
                   >
                     <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        2. Authenticate
+                        2. Credentials sent with every request
                       </p>
                     </div>
                     <pre
                       className="px-4 py-3 text-[13px] text-[#27272A]"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>/mcp</code>
+                      <code>{`X-Parseable-URL: ${PARSEABLE_URL}\nX-API-Key: ${API_KEY}`}</code>
                     </pre>
                   </div>
                 </div>
@@ -512,7 +515,10 @@ export function TwoWays() {
                       <button
                         type="button"
                         onClick={() =>
-                          copy("npx -y @parseablehq/mcp", "tw-install")
+                          copy(
+                            "npx -y @parseable/parseable-mcp-server init",
+                            "tw-install",
+                          )
                         }
                         className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
                       >
@@ -531,7 +537,7 @@ export function TwoWays() {
                       className="px-4 py-3 text-[13px] text-[#27272A]"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>npx -y @parseablehq/mcp</code>
+                      <code>npx -y @parseable/parseable-mcp-server init</code>
                     </pre>
                   </div>
                 </div>
@@ -575,37 +581,14 @@ export function TwoWays() {
                   >
                     <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        3. Connect
+                        3. Restart your MCP client
                       </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copy(
-                            "claude mcp add --transport http parseable https://your-instance.parseable.com/mcp",
-                            "tw-connect",
-                          )
-                        }
-                        className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
-                      >
-                        {copied === "tw-connect" ? (
-                          <IconCheck
-                            size={13}
-                            stroke={2}
-                            className="text-[#00A896]"
-                          />
-                        ) : (
-                          <IconCopy size={13} stroke={1.5} />
-                        )}
-                      </button>
                     </div>
                     <pre
                       className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>
-                        claude mcp add --transport http parseable
-                        https://your-instance.parseable.com/mcp
-                      </code>
+                      <code>Parseable tools appear after restart</code>
                     </pre>
                   </div>
                 </div>

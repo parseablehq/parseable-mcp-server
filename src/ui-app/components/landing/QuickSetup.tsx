@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
-import { IconArrowUpRight, IconCheck, IconCopy } from "@tabler/icons-react";
+import { IconCheck, IconCopy } from "@tabler/icons-react";
 
 type CopyKey = string;
 
@@ -48,24 +48,13 @@ const CLIENT_ICONS: Record<string, ReactNode> = {
     />
   ),
   "Claude Desktop": (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/assets/clients/claude-ai.svg"
-      width={20}
-      height={20}
-      alt=""
-      aria-hidden="true"
-    />
+    <img src="/assets/clients/claude-ai.svg" width={20} height={20} alt="" aria-hidden="true" />
   ),
-  ChatGPT: (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/assets/clients/openai-chatgpt.svg"
-      width={20}
-      height={20}
-      alt=""
-      aria-hidden="true"
-    />
+  "ChatGPT Desktop": (
+    <img src="/assets/clients/openai-chatgpt.svg" width={20} height={20} alt="" aria-hidden="true" />
+  ),
+  Codex: (
+    <img src="/assets/clients/openai-chatgpt.svg" width={20} height={20} alt="" aria-hidden="true" />
   ),
   Windsurf: (
     // eslint-disable-next-line @next/next/no-img-element
@@ -77,16 +66,6 @@ const CLIENT_ICONS: Record<string, ReactNode> = {
       aria-hidden="true"
     />
   ),
-  "Slack Bot": (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/assets/clients/slack.svg"
-      width={18}
-      height={18}
-      alt=""
-      aria-hidden="true"
-    />
-  ),
 };
 
 const CLIENTS = [
@@ -94,66 +73,79 @@ const CLIENTS = [
   "Cursor",
   "VS Code",
   "Claude Desktop",
-  "ChatGPT",
+  "ChatGPT Desktop",
+  "Codex",
   "Windsurf",
-  "Slack Bot",
 ] as const;
 type Client = (typeof CLIENTS)[number];
 
 const HOSTED_URL = `${window.location.origin}/mcp`;
+const PARSEABLE_URL = "https://your-parseable.example.com";
+const API_KEY = "your-parseable-api-key";
+const AUTH_HEADERS = {
+  "X-Parseable-URL": PARSEABLE_URL,
+  "X-API-Key": API_KEY,
+};
 
-const MANUAL_JSON: Record<Client, { file: string; json: object }> = {
+const CODEX_TOML = `[mcp_servers.parseable]
+url = "${HOSTED_URL}"
+http_headers = { "X-Parseable-URL" = "${PARSEABLE_URL}", "X-API-Key" = "${API_KEY}" }`;
+
+const MANUAL_CONFIG: Record<Client, { file: string; content: string }> = {
   "Claude Code": {
-    file: "~/.claude/claude_code_config.json",
-    json: {
+    file: "~/.claude.json",
+    content: JSON.stringify({
       mcpServers: {
-        parseable: { type: "http", url: HOSTED_URL },
+        parseable: { type: "http", url: HOSTED_URL, headers: AUTH_HEADERS },
       },
-    },
+    }, null, 2),
   },
   Cursor: {
     file: "~/.cursor/mcp.json",
-    json: {
+    content: JSON.stringify({
       mcpServers: {
-        parseable: { type: "http", url: HOSTED_URL },
+        parseable: { type: "http", url: HOSTED_URL, headers: AUTH_HEADERS },
       },
-    },
+    }, null, 2),
   },
   "VS Code": {
     file: ".vscode/mcp.json",
-    json: {
+    content: JSON.stringify({
       servers: {
-        parseable: { type: "http", url: HOSTED_URL },
+        parseable: { type: "http", url: HOSTED_URL, headers: AUTH_HEADERS },
       },
-    },
+    }, null, 2),
   },
   "Claude Desktop": {
-    file: "~/Library/Application Support/Claude/claude_desktop_config.json",
-    json: {
+    file: "claude_desktop_config.json",
+    content: JSON.stringify({
       mcpServers: {
-        parseable: { type: "http", url: HOSTED_URL },
+        parseable: {
+          command: "npx",
+          args: ["-y", "@parseable/parseable-mcp-server"],
+          env: {
+            PARSEABLE_URL,
+            PARSEABLE_API_KEY: API_KEY,
+          },
+        },
       },
-    },
+    }, null, 2),
   },
-  ChatGPT: {
-    file: "~/Library/Application Support/com.openai.chat/mcp.json",
-    json: {
-      mcpServers: {
-        parseable: { type: "http", url: HOSTED_URL },
-      },
-    },
+  "ChatGPT Desktop": {
+    file: "~/.codex/config.toml",
+    content: CODEX_TOML,
+  },
+  Codex: {
+    file: "~/.codex/config.toml",
+    content: CODEX_TOML,
   },
   Windsurf: {
     file: "~/.codeium/windsurf/mcp_config.json",
-    json: {
+    content: JSON.stringify({
       mcpServers: {
-        parseable: { type: "http", url: HOSTED_URL },
+        parseable: { serverUrl: HOSTED_URL, headers: AUTH_HEADERS },
       },
-    },
-  },
-  "Slack Bot": {
-    file: "",
-    json: {},
+    }, null, 2),
   },
 };
 
@@ -236,32 +228,10 @@ function SectionLabel({ children }: { children: ReactNode }) {
   return <p className="font-inter text-xs text-black/40 mb-2">{children}</p>;
 }
 
-function InstallButton({
-  href,
-  icon,
-  label,
-}: {
-  href: string;
-  icon: ReactNode;
-  label: string;
-  iconColor?: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="inline-flex items-center gap-2.5 px-4 h-10 rounded-lg border border-black/10 bg-white hover:bg-black/2 font-inter text-sm font-medium text-[#14151A] transition-colors shadow-[0_1px_3px_0_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C]"
-    >
-      {icon}
-      {label}
-    </a>
-  );
-}
-
 export function QuickSetup() {
   const [active, setActive] = useState<Client>("Cursor");
   const { copied, copy } = useCopy();
-  const manual = MANUAL_JSON[active];
-  const manualStr = JSON.stringify(manual.json, null, 2);
+  const manual = MANUAL_CONFIG[active];
 
   return (
     <section className="mt-16 pb-8">
@@ -295,272 +265,33 @@ export function QuickSetup() {
 
           {/* Tab content */}
           <div id="setup-panel" className="p-6 flex flex-col gap-4 min-w-0">
+            <p className="font-inter text-sm text-black/55 leading-6">
+              {active === "Claude Desktop"
+                ? "Claude Desktop runs the server locally over stdio. Replace the Parseable URL and API key, save, then restart Claude Desktop."
+                : "Replace credential placeholders below with your Parseable URL and API key. Requests authenticate through headers - no OAuth sign-in required."}
+            </p>
             {active === "Claude Code" && (
               <>
                 <div>
                   <SectionLabel>CLI</SectionLabel>
                   <DarkCodeBlock
-                    content={`claude mcp add --transport http parseable ${HOSTED_URL}`}
+                    content={`claude mcp add --transport http parseable ${HOSTED_URL} --scope user --header "X-Parseable-URL: ${PARSEABLE_URL}" --header "X-API-Key: ${API_KEY}"`}
                     copyKey="cli-cc"
                     copied={copied}
                     onCopy={copy}
                   />
                 </div>
-                <div>
-                  <SectionLabel>
-                    Manual configuration · {manual.file}
-                  </SectionLabel>
-                  <DarkCodeBlock
-                    content={manualStr}
-                    copyKey="json-cc"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
               </>
             )}
-
-            {active === "Cursor" && (
-              <>
-                <div>
-                  <SectionLabel>One click install</SectionLabel>
-                  <InstallButton
-                    href="cursor://anysphere.cursor-deeplink/mcp/install?name=parseable&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBwYXJzZWFibGVocS9tY3AiXX0%3D"
-                    icon={CLIENT_ICONS["Cursor"]}
-                    label="Add to Cursor"
-                  />
-                </div>
-                <div>
-                  <SectionLabel>CLI</SectionLabel>
-                  <DarkCodeBlock
-                    content={`npx -y @parseablehq/mcp --url ${HOSTED_URL}`}
-                    copyKey="cli-cursor"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-                <div>
-                  <SectionLabel>
-                    Manual configuration · {manual.file}
-                  </SectionLabel>
-                  <DarkCodeBlock
-                    content={manualStr}
-                    copyKey="json-cursor"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-              </>
-            )}
-
-            {active === "VS Code" && (
-              <>
-                <div>
-                  <SectionLabel>One click install</SectionLabel>
-                  <div className="flex flex-wrap gap-2">
-                    <InstallButton
-                      href="vscode:extension/mcp/install?name=parseable&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBwYXJzZWFibGVocS9tY3AiXX0%3D"
-                      icon={CLIENT_ICONS["VS Code"]}
-                      label="Add to VS Code"
-                    />
-                    <InstallButton
-                      href="vscode-insiders:extension/mcp/install?name=parseable&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBwYXJzZWFibGVocS9tY3AiXX0%3D"
-                      icon={CLIENT_ICONS["VS Code"]}
-                      label="Add to VS Code Insiders"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <SectionLabel>CLI</SectionLabel>
-                  <DarkCodeBlock
-                    content={`npx -y @parseablehq/mcp setup vscode --url ${HOSTED_URL}\nnpx -y @parseablehq/mcp setup vscode-insiders --url ${HOSTED_URL}`}
-                    copyKey="cli-vscode"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-                <div>
-                  <SectionLabel>
-                    Manual configuration · {manual.file}
-                  </SectionLabel>
-                  <DarkCodeBlock
-                    content={manualStr}
-                    copyKey="json-vscode"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-              </>
-            )}
-
-            {active === "Claude Desktop" && (
-              <ol className="flex flex-col gap-2.5">
-                {[
-                  <>Open Claude Desktop → Settings → Developer</>,
-                  <>
-                    Click Edit Config to open{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{
-                        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      claude_desktop_config.json
-                    </code>
-                  </>,
-                  <>
-                    Add the parseable entry under{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{
-                        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      mcpServers
-                    </code>{" "}
-                    using the URL{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{
-                        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      {HOSTED_URL}
-                    </code>
-                  </>,
-                  <>Save and restart Claude Desktop</>,
-                  <>
-                    Look for the hammer icon in chat - Parseable tools appear
-                    there
-                  </>,
-                ].map((step, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 font-inter text-sm text-black/60 leading-5"
-                  >
-                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-black/5 flex items-center justify-center font-inter text-[11px] text-black/40">
-                      {i + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            {active === "ChatGPT" && (
-              <ol className="flex flex-col gap-2.5">
-                {[
-                  <>Open ChatGPT Desktop → Settings → Beta Features</>,
-                  <>Enable Model Context Protocol (MCP)</>,
-                  <>Go to Settings → Connectors → Add MCP Server</>,
-                  <>
-                    Set the URL to{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{
-                        fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      {HOSTED_URL}
-                    </code>{" "}
-                    and authenticate
-                  </>,
-                  <>Restart ChatGPT and look for the tools icon in chat</>,
-                ].map((step, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 font-inter text-sm text-black/60 leading-5"
-                  >
-                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-black/5 flex items-center justify-center font-inter text-[11px] text-black/40">
-                      {i + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            {active === "Windsurf" && (
-              <>
-                <div>
-                  <SectionLabel>CLI</SectionLabel>
-                  <DarkCodeBlock
-                    content={`npx -y @parseablehq/mcp --url ${HOSTED_URL}`}
-                    copyKey="cli-windsurf"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-                <div>
-                  <SectionLabel>
-                    Manual configuration · {manual.file}
-                  </SectionLabel>
-                  <DarkCodeBlock
-                    content={manualStr}
-                    copyKey="json-windsurf"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-              </>
-            )}
-
-            {active === "Slack Bot" && (
-              <ol className="flex flex-col gap-2.5">
-                {[
-                  <>
-                    Go to{" "}
-                    <a
-                      href="https://parseable.com/slack"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#3A3A8C] hover:underline"
-                    >
-                      parseable.com/slack
-                    </a>{" "}
-                    and click{" "}
-                    <span className="font-medium text-[#14151A]">
-                      Add to Slack
-                    </span>
-                  </>,
-                  <>Authorize the Parseable app in your workspace</>,
-                  <>
-                    In any channel, type{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      /parseable connect
-                    </code>{" "}
-                    to link your Parseable instance
-                  </>,
-                  <>
-                    Ask anything -{" "}
-                    <code
-                      className="text-xs px-1.5 py-0.5 rounded bg-black/5"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      @parseable show errors from api-gateway in the last 30
-                      minutes
-                    </code>
-                  </>,
-                  <>
-                    Invite the bot to alert channels to get automatic root cause
-                    analysis on every firing alert
-                  </>,
-                ].map((step, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 font-inter text-sm text-black/60 leading-5"
-                  >
-                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-black/5 flex items-center justify-center font-inter text-[11px] text-black/40">
-                      {i + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <div>
+              <SectionLabel>Manual configuration · {manual.file}</SectionLabel>
+              <DarkCodeBlock
+                content={manual.content}
+                copyKey={`config-${active}`}
+                copied={copied}
+                onCopy={copy}
+              />
+            </div>
           </div>
         </div>
       </div>
