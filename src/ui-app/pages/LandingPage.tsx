@@ -70,6 +70,12 @@ function ParseableLogo() {
 type Tab = "claude-desktop" | "claude-code" | "cursor" | "vscode";
 
 const MCP_URL = `${window.location.origin}/mcp`;
+const PARSEABLE_URL = "https://your-parseable.example.com";
+const API_KEY = "your-parseable-api-key";
+const REQUIRED_HEADERS = {
+  "X-Parseable-URL": PARSEABLE_URL,
+  "X-API-Key": API_KEY,
+};
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "claude-desktop", label: "Claude Desktop" },
@@ -88,22 +94,32 @@ const configs: Record<
       'Click "Add custom connector"',
       "Name: Parseable",
       `Remote MCP server URL: ${MCP_URL}`,
-      'Click "Add", then "Connect" and complete the OAuth flow',
+      `Add header X-Parseable-URL: ${PARSEABLE_URL}`,
+      `Add header X-API-Key: ${API_KEY}`,
+      'Click "Add" and connect',
     ],
   },
   "claude-code": {
-    cli: `claude mcp add --transport http parseable ${MCP_URL} --scope user`,
+    cli: `claude mcp add --transport http parseable ${MCP_URL} --scope user --header "X-Parseable-URL: ${PARSEABLE_URL}" --header "X-API-Key: ${API_KEY}"`,
   },
   cursor: {
     json: JSON.stringify(
-      { mcpServers: { parseable: { type: "http", url: MCP_URL } } },
+      {
+        mcpServers: {
+          parseable: { type: "http", url: MCP_URL, headers: REQUIRED_HEADERS },
+        },
+      },
       null,
       2,
     ),
   },
   vscode: {
     json: JSON.stringify(
-      { servers: { parseable: { type: "http", url: MCP_URL } } },
+      {
+        servers: {
+          parseable: { type: "http", url: MCP_URL, headers: REQUIRED_HEADERS },
+        },
+      },
       null,
       2,
     ),
@@ -190,12 +206,6 @@ export function LandingPage() {
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <a
-              href="/login"
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-md bg-parseableBlue-500 text-white text-sm font-semibold hover:bg-parseableBlue-400 no-underline transition-colors"
-            >
-              Connect with OAuth
-            </a>
-            <a
               href="https://www.parseable.com/docs"
               target="_blank"
               rel="noopener noreferrer"
@@ -218,7 +228,32 @@ export function LandingPage() {
             <CopyButton text={MCP_URL} />
           </div>
           <p className="text-xs text-coolGray-500">
-            HTTP transport · OAuth 2.0 · PKCE
+            HTTP transport · Parseable API key authentication
+          </p>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-[#E5E7EB] p-6 flex flex-col gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-coolGray-100">
+              Required credentials
+            </h2>
+            <p className="text-sm text-coolGray-400 mt-1">
+              Every MCP request must include your Parseable URL and API key.
+            </p>
+          </div>
+          {Object.entries(REQUIRED_HEADERS).map(([name, value]) => (
+            <div key={name} className="flex flex-col gap-1">
+              <code className="text-xs font-semibold text-coolGray-500">{name}</code>
+              <div className="flex items-center justify-between gap-3 bg-[#F9FAFB] rounded-lg px-4 py-3">
+                <code className="text-sm text-parseableBlue-500 font-mono break-all">
+                  {value}
+                </code>
+                <CopyButton text={value} />
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-coolGray-500">
+            Replace placeholder values in setup examples below. Treat API key as a secret.
           </p>
         </section>
 
