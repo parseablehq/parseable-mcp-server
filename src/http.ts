@@ -7,9 +7,6 @@ import { type Context, Hono } from "hono";
 import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "./auth.js";
 import { buildMcpServer } from "./bootstrap.js";
 import { ParseableClient } from "./client.js";
-import { getClerkConfig, mintClerkSessionToken } from "./oauth/clerk.js";
-import { verifyAccessToken } from "./oauth/jwt.js";
-import { oauth } from "./oauth/routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, "ui");
@@ -53,26 +50,7 @@ let _indexHtmlCache: string | null = null;
 function buildIndexHtml(): string {
   const indexPath = join(UI_DIR, "index.html");
   if (!existsSync(indexPath)) return "";
-  const { publishableKey } = getClerkConfig();
-  const publicBaseUrl = (
-    process.env.MCP_PUBLIC_BASE_URL ?? `http://localhost:${process.env.PORT ?? DEFAULT_PORT}`
-  ).replace(/\/+$/, "");
-  // Escape </script> to prevent XSS if key ever contains it
-  const config = JSON.stringify({ publishableKey, publicBaseUrl }).replace(
-    /<\/script>/gi,
-    "<\\/script>",
-  );
-  return readFileSync(indexPath, "utf-8").replace("__PARSEABLE_CONFIG_PLACEHOLDER__", config);
-}
-
-function serveIndex(c: Context) {
-  if (!_indexHtmlCache) {
-    _indexHtmlCache = buildIndexHtml();
-  }
-  if (!_indexHtmlCache) {
-    return c.text("UI not built. Run: npm run build:ui", 503);
-  }
-  return c.html(_indexHtmlCache);
+  return readFileSync(indexPath, "utf-8");
 }
 
 function serveRoot(c: Context) {
@@ -84,20 +62,6 @@ function serveRoot(c: Context) {
   }
   return c.html(_indexHtmlCache);
 }
-
-// Catch Clerk handshake redirects on any path
-app.use("/*", async (c, next) => {
-  if (c.req.method === "GET" && c.req.query("__clerk_handshake")) {
-    return serveIndex(c);
-  }
-  return next();
-});
-
-// UI page routes → serve React SPA
-app.get("/login", serveIndex);
-app.get("/sso-callback", serveIndex);
-app.get("/post-auth", serveIndex);
-app.get("/pick-workspace", serveIndex);
 
 // Static assets for the React build (JS/CSS/etc)
 app.get("/assets/*", async (c) => {
@@ -119,38 +83,7 @@ app.get("/assets/*", async (c) => {
   });
 });
 
-app.route("/", oauth);
-
 app.get("/", serveRoot);
-
-async function buildClerkClient(bearer: string): Promise<{
-  client: ParseableClient;
-  config: {
-    url: string;
-    apiKey: string;
-    maxRows: number;
-    queryTimeoutMs: number;
-  };
-}> {
-  const claims = await verifyAccessToken(bearer);
-  const clerkToken = await mintClerkSessionToken(claims.sid);
-  const client = new ParseableClient({
-    url: claims.url,
-    workspaceId: claims.wid,
-    clerkSessionToken: clerkToken,
-    maxRows: DEFAULT_MAX_ROWS,
-    queryTimeoutMs: DEFAULT_QUERY_TIMEOUT_MS,
-  });
-  return {
-    client,
-    config: {
-      url: claims.url,
-      apiKey: "<clerk-session>",
-      maxRows: DEFAULT_MAX_ROWS,
-      queryTimeoutMs: DEFAULT_QUERY_TIMEOUT_MS,
-    },
-  };
-}
 
 function buildApiKeyClient(reqHeaders: Headers): {
   client: ParseableClient;
@@ -178,11 +111,7 @@ function buildApiKeyClient(reqHeaders: Headers): {
 
 async function handleMcpPost(c: Context) {
   try {
-    const bearer = c.req
-      .header("authorization")
-      ?.replace(/^Bearer\s+/i, "")
-      .trim();
-    const built = bearer ? await buildClerkClient(bearer) : buildApiKeyClient(c.req.raw.headers);
+    const built = buildApiKeyClient(c.req.raw.headers);
 
     const mcp = buildMcpServer({ client: built.client, config: built.config });
 

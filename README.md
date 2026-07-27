@@ -7,7 +7,7 @@ Model Context Protocol server for [Parseable](https://www.parseable.com). Lets a
 | Mode | Transport | Auth | Use when |
 |------|-----------|------|----------|
 | `stdio` | Stdin/stdout | API key via env vars | Claude Desktop, Cursor, VS Code, local clients |
-| `http` | HTTP + SSE | OAuth 2.0 via Clerk | Claude Desktop custom connector, hosted deployments |
+| `http` | Streamable HTTP | Parseable URL + API key headers | Hosted deployments and remote clients |
 
 ---
 
@@ -34,22 +34,15 @@ Supported `--client` values: `claude-desktop`, `cursor`.
 
 ---
 
-## Quickstart — HTTP + OAuth (hosted)
+## Quickstart — HTTP (hosted)
 
-The HTTP mode serves a landing page, OAuth login UI, and the MCP endpoint — all from one process.
+HTTP mode serves a setup page and MCP endpoint from one process. Every client supplies its own Parseable URL and API key.
 
 ### 1. Set env vars
 
 ```bash
 # .env
-PARSEABLE_URL=https://your-parseable.example.com
-PARSEABLE_API_KEY=your-api-key
-
 PORT=8787
-MCP_PUBLIC_BASE_URL=https://mcp.your-domain.com   # public URL of this server
-
-CLERK_PUBLISHABLE_KEY=pk_live_xxx   # Clerk Dashboard → API Keys
-CLERK_SECRET_KEY=sk_live_xxx        # Clerk Dashboard → API Keys (server-side only)
 ```
 
 ### 2. Run
@@ -68,13 +61,17 @@ docker run -p 8787:8787 --env-file .env parseable-mcp-server
 
 - Claude Desktop → Settings → Connectors → Add custom connector
 - Name: `Parseable`
-- URL: `https://mcp.your-domain.com`
-- Click Add → Connect → complete OAuth
+- URL: `https://mcp.your-domain.com/mcp`
+- Header `X-Parseable-URL`: `https://your-parseable.example.com`
+- Header `X-API-Key`: your Parseable API key
+- Click Add → Connect
 
 ### 4. Connect from Claude Code
 
 ```bash
-claude mcp add --transport http parseable https://mcp.your-domain.com --scope user
+claude mcp add --transport http parseable https://mcp.your-domain.com/mcp --scope user \
+  --header "X-Parseable-URL: https://your-parseable.example.com" \
+  --header "X-API-Key: $PARSEABLE_API_KEY"
 ```
 
 ### 5. Connect from Cursor / VS Code
@@ -82,41 +79,30 @@ claude mcp add --transport http parseable https://mcp.your-domain.com --scope us
 ```json
 {
   "mcpServers": {
-    "parseable": { "type": "http", "url": "https://mcp.your-domain.com" }
+    "parseable": {
+      "type": "http",
+      "url": "https://mcp.your-domain.com/mcp",
+      "headers": {
+        "X-Parseable-URL": "https://your-parseable.example.com",
+        "X-API-Key": "your-parseable-api-key"
+      }
+    }
   }
 }
 ```
 
 ---
 
-## How the OAuth flow works
+## HTTP authentication
 
-```
-MCP client → GET /.well-known/oauth-authorization-server  (discover endpoints)
-           → GET /oauth/authorize?...                      (redirect to /login)
-           → GET /login                                    (React UI, Clerk sign-in)
-           → Clerk OAuth (Google / LinkedIn / GitHub / email)
-           → GET /sso-callback                             (Clerk handshake)
-           → GET /post-auth                                (read session, forward to /oauth/callback)
-           → GET /oauth/callback                           (verify Clerk session, resolve workspace)
-           → POST /oauth/token                             (exchange code → access token)
-           → POST /                                        (MCP calls with Bearer token)
-```
+Each `POST /mcp` request requires:
 
-### How Clerk keys reach the browser
+| Header | Value |
+|--------|-------|
+| `X-Parseable-URL` | Parseable base URL (`http://` or `https://`) |
+| `X-API-Key` | Parseable API key |
 
-`CLERK_SECRET_KEY` never leaves the server. `CLERK_PUBLISHABLE_KEY` is designed to be public — it's injected inline into `index.html` at serve time:
-
-```
-GET /login
-  → serveIndex() reads dist/ui/index.html
-  → injects: window.__PARSEABLE_CONFIG__ = {"publishableKey":"pk_live_...","publicBaseUrl":"https://..."}
-  → sends HTML to browser
-
-React reads window.__PARSEABLE_CONFIG__ synchronously → passes publishableKey to <ClerkProvider>
-```
-
-No separate `/config` endpoint. No network call from the browser to fetch keys.
+HTTP server validates the URL and forwards the API key to that Parseable instance. By default, private and loopback Parseable URLs are rejected to limit SSRF. Set `PARSEABLE_MCP_ALLOW_PRIVATE=true` only for trusted deployments that need private network targets.
 
 ---
 
@@ -132,14 +118,12 @@ No separate `/config` endpoint. No network call from the browser to fetch keys.
 | `PARSEABLE_MAX_ROWS` | | 1000 | Hard cap on query rows |
 | `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP timeout (ms) |
 
-### HTTP + OAuth mode (additional)
+### HTTP mode
 
 | Var | Required | Default | Purpose |
 |-----|----------|---------|---------|
 | `PORT` | | 8787 | HTTP listen port |
-| `MCP_PUBLIC_BASE_URL` | ✅ | — | Public URL of this server (used in OAuth redirects) |
-| `CLERK_PUBLISHABLE_KEY` | ✅ | — | Clerk `pk_live_` or `pk_test_` key |
-| `CLERK_SECRET_KEY` | ✅ | — | Clerk `sk_live_` or `sk_test_` key (server-side only) |
+| `PARSEABLE_MCP_ALLOW_PRIVATE` | | false | Permit private/loopback Parseable URLs supplied in request headers |
 
 ### OpenTelemetry (optional)
 
@@ -308,7 +292,7 @@ npm run build:all       # both
 
 # Run
 node dist/server.js         # stdio mode
-node dist/server.js http    # HTTP + OAuth mode (port 8787)
+node dist/server.js http    # HTTP mode (port 8787)
 
 # Dev
 npm run dev             # tsc --watch
@@ -324,11 +308,11 @@ CI (GitHub Actions) runs lint + `build:all` + test on every push/PR to `main` on
 
 ## Security
 
-- Basic-auth credentials in stdio mode live in the MCP client config. Use a Parseable user scoped to minimum permissions.
-- `CLERK_SECRET_KEY` is server-side only — it never reaches the browser. The publishable key (`pk_`) is injected inline into HTML and is designed to be public.
+- Parseable API keys live in MCP client configuration. Use keys scoped to minimum required permissions.
+- HTTP clients send credentials in `X-Parseable-URL` and `X-API-Key`; always use HTTPS for remote deployments.
 - `query_sql` blocks DDL/DML and enforces a row `LIMIT`. Time window is mandatory.
 - `evaluate_alert` can fire real notifications — review the call before approving.
-- No telemetry. Outbound calls go to your Parseable instance and Clerk only.
+- No telemetry. Outbound calls go only to the Parseable instance configured by the user.
 
 ---
 

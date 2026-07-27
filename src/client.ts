@@ -1,19 +1,5 @@
 import type { Config } from "./config.js";
 
-export interface ClerkAuthOptions {
-  url: string;
-  workspaceId: string;
-  clerkSessionToken: string;
-  maxRows: number;
-  queryTimeoutMs: number;
-}
-
-export type ClientOptions = Config | ClerkAuthOptions;
-
-function isClerkOptions(opts: ClientOptions): opts is ClerkAuthOptions {
-  return "clerkSessionToken" in opts && typeof opts.clerkSessionToken === "string";
-}
-
 export class ParseableError extends Error {
   constructor(
     public status: number,
@@ -71,66 +57,16 @@ export function classifyStatus(status: number, _method: string, path: string): s
 }
 
 export class ParseableClient {
-  private authHeader?: string;
-  private clerkSessionToken?: string;
-  private workspaceId?: string;
-  private cookies?: string;
+  private apiKey: string;
   private url: string;
   private queryTimeoutMs: number;
   public readonly maxRows: number;
 
-  constructor(opts: ClientOptions) {
+  constructor(opts: Config) {
     this.url = opts.url.replace(/\/+$/, "");
     this.queryTimeoutMs = opts.queryTimeoutMs;
     this.maxRows = opts.maxRows;
-    if (isClerkOptions(opts)) {
-      this.clerkSessionToken = opts.clerkSessionToken;
-      this.workspaceId = opts.workspaceId;
-    } else {
-      this.authHeader = opts.apiKey;
-    }
-  }
-
-  private async ensureClerkBootstrap(): Promise<void> {
-    if (!this.clerkSessionToken) return;
-    if (this.cookies) return;
-    const codeUrl = `${this.url}/api/v1/o/code?code=${encodeURIComponent(this.clerkSessionToken)}&state=${encodeURIComponent(this.url)}`;
-    const res = await fetch(codeUrl, {
-      method: "GET",
-      headers: {
-        "X-CLERK-SESSION-TOKEN": this.clerkSessionToken,
-        ...(this.workspaceId ? { "x-p-tenant": this.workspaceId } : {}),
-        Accept: "application/json",
-      },
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new ParseableError(
-        res.status,
-        text,
-        `Parseable /o/code bootstrap failed: ${res.status} ${res.statusText}\n${text.slice(0, 300)}`,
-      );
-    }
-    const setCookie = res.headers.get("set-cookie");
-    if (!setCookie) {
-      throw new Error("Parseable /o/code returned no Set-Cookie header");
-    }
-    // Keep only name=value pairs; drop attributes like Path/HttpOnly/Expires.
-    this.cookies = setCookie
-      .split(/,(?=[^;]+?=)/)
-      .map((c) => c.trim().split(";")[0])
-      .filter(Boolean)
-      .join("; ");
-  }
-
-  private async authHeaders(): Promise<Record<string, string>> {
-    if (this.authHeader) return { "X-API-Key": this.authHeader };
-    await this.ensureClerkBootstrap();
-    return {
-      "X-CLERK-SESSION-TOKEN": this.clerkSessionToken as string,
-      Cookie: this.cookies ?? "",
-      ...(this.workspaceId ? { "x-p-tenant": this.workspaceId } : {}),
-    };
+    this.apiKey = opts.apiKey;
   }
 
   private async request<T>(
@@ -146,11 +82,10 @@ export class ParseableClient {
     const timeout = setTimeout(() => controller.abort(), this.queryTimeoutMs);
 
     try {
-      const auth = await this.authHeaders();
       const res = await fetch(url, {
         method,
         headers: {
-          ...auth,
+          "X-API-Key": this.apiKey,
           "Content-Type": "application/json",
           Accept: "application/json",
         },

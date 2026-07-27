@@ -57,6 +57,28 @@ describe("HTTP routes", () => {
     expect(body.error).toMatch(/X-Parseable-URL/);
   });
 
+  it("does not accept bearer tokens instead of Parseable credentials", async () => {
+    const res = await app.fetch(
+      new Request("http://localhost/mcp", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer legacy-oauth-token",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(initBody),
+      }),
+    );
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/X-Parseable-URL/);
+    expect(body.error).toMatch(/X-API-Key/);
+  });
+
+  it("does not expose OAuth discovery", async () => {
+    const res = await app.request("/.well-known/oauth-authorization-server");
+    expect(res.status).toBe(404);
+  });
+
   it("POST /mcp with private IP returns 400 (SSRF)", async () => {
     const res = await app.fetch(
       mcpReq(initBody, {
