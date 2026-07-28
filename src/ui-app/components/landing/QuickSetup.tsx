@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
-import { IconCheck, IconCopy } from "@tabler/icons-react";
+import { IconCheck, IconCloud, IconCopy, IconServer } from "@tabler/icons-react";
 
 type CopyKey = string;
 
@@ -294,6 +294,32 @@ export function QuickSetup() {
   return (
     <section className="mt-16 pb-8">
       <div className="max-w-page mx-auto px-4 md:px-0">
+        {/* Mode toggle — shared across every client tab below */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex rounded-lg p-1 border border-black/[0.07] bg-black/[0.02]">
+            {(["cloud", "self-hosted"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={mode === option}
+                onClick={() => setMode(option)}
+                className={`inline-flex cursor-pointer items-center gap-2 px-5 py-2 rounded-md font-inter text-sm transition-colors ${
+                  mode === option
+                    ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
+                    : "text-black/40 hover:text-black/70"
+                }`}
+              >
+                {option === "cloud" ? (
+                  <IconCloud size={15} stroke={1.5} />
+                ) : (
+                  <IconServer size={15} stroke={1.5} />
+                )}
+                {option === "cloud" ? "Parseable Cloud" : "Self-hosted"}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="rounded-xl overflow-hidden border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.07)]">
           {/* Tabs */}
           <div className="flex items-center justify-center border-b border-black/6 px-6 gap-0 overflow-x-auto overflow-y-hidden">
@@ -323,23 +349,6 @@ export function QuickSetup() {
 
           {/* Tab content */}
           <div id="setup-panel" className="p-6 flex flex-col gap-4 min-w-0">
-            <div className="inline-flex self-start rounded-lg p-1 border border-black/[0.07] bg-black/2">
-              {(["cloud", "self-hosted"] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={mode === option}
-                  onClick={() => setMode(option)}
-                  className={`cursor-pointer px-3 py-1.5 rounded-md font-inter text-xs transition-colors ${
-                    mode === option
-                      ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
-                      : "text-black/40 hover:text-black/70"
-                  }`}
-                >
-                  {option === "cloud" ? "Parseable Cloud" : "Self-hosted"}
-                </button>
-              ))}
-            </div>
             <p className="font-inter text-sm text-black/55 leading-6">
               {mode === "cloud"
                 ? "Connect to the remote MCP endpoint with your Parseable Cloud API key. Cloud routing is resolved automatically; no Parseable URL or OAuth sign-in is required."
