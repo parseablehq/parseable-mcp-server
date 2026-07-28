@@ -9,7 +9,7 @@ const schema = {
 - alertType ("threshold" | "anomaly" | "forecast")
 - thresholdConfig { operator: ">"|"<"|"="|">="|"<="|"!=", value: number }
 - evalConfig { rollingWindow: { evalStart: "5m", evalEnd: "now", evalFrequency: 1 } }
-- targets (string[] — target UUIDs; empty array if no destinations)
+- targets (string[] - target UUIDs; empty array if no destinations)
 
 Optional:
 - severity ("critical"|"high"|"medium"|"low", default "medium")

@@ -9,7 +9,7 @@ export const evaluateAlert: ToolDef<typeof schema> = {
   name: "evaluate_alert",
   title: "Evaluate alert now",
   description:
-    "Force-evaluate an alert immediately (out-of-schedule). MAY TRIGGER REAL NOTIFICATIONS if threshold breached — confirm with user before running on production alerts.",
+    "Force-evaluate an alert immediately (out-of-schedule). MAY TRIGGER REAL NOTIFICATIONS if threshold breached - confirm with user before running on production alerts.",
   inputSchema: schema,
   handler: async (args, { client }) => {
     return await client.evaluateAlert(String(args.alert_id));

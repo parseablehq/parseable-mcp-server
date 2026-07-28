@@ -48,7 +48,7 @@ export function classifyStatus(status: number, _method: string, path: string): s
     return "Server timed out. Try a shorter time window or smaller query.";
   }
   if (status === 429) {
-    return "Rate limited. Parseable defaults to 100 req/min/IP — back off and retry.";
+    return "Rate limited. Parseable defaults to 100 req/min/IP - back off and retry.";
   }
   if (status >= 500) {
     return "Parseable returned a server error. Check Parseable logs; this is likely not a config issue on the MCP side.";

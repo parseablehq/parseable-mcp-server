@@ -124,7 +124,7 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
   const args = parseInitArgs(argv);
   const all = getClientTargets();
 
-  console.log("Parseable MCP server — interactive setup\n");
+  console.log("Parseable MCP server - interactive setup\n");
 
   // 1. Application
   let selectedTarget: ClientTarget;

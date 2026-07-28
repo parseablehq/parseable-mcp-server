@@ -6,7 +6,7 @@ const schema = {
     .string()
     .min(1)
     .describe(
-      "SQL SELECT to explain (do not include leading EXPLAIN — added automatically). Same dialect as query_sql.",
+      "SQL SELECT to explain (do not include leading EXPLAIN - added automatically). Same dialect as query_sql.",
     ),
   startTime: z
     .string()
@@ -29,7 +29,7 @@ export const explainQuery: ToolDef<typeof schema> = {
       throw new Error("Only SELECT queries can be explained. DDL/DML keywords detected.");
     }
     if (/^\s*EXPLAIN\b/i.test(userSql)) {
-      throw new Error("Do not prefix the query with EXPLAIN — this tool adds it automatically.");
+      throw new Error("Do not prefix the query with EXPLAIN - this tool adds it automatically.");
     }
 
     const query = `EXPLAIN ${userSql}`;
