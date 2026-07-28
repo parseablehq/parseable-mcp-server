@@ -3,6 +3,8 @@ import "dotenv/config";
 export interface Config {
   url: string;
   apiKey: string;
+  tenantId?: string;
+  mode?: "cloud" | "self-hosted";
   defaultDataset?: string;
   maxRows: number;
   queryTimeoutMs: number;

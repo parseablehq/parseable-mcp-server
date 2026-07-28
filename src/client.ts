@@ -60,13 +60,17 @@ export class ParseableClient {
   private apiKey: string;
   private url: string;
   private queryTimeoutMs: number;
+  private tenantId?: string;
   public readonly maxRows: number;
+  private onUnauthorized?: () => void;
 
-  constructor(opts: Config) {
+  constructor(opts: Config, hooks: { onUnauthorized?: () => void } = {}) {
     this.url = opts.url.replace(/\/+$/, "");
     this.queryTimeoutMs = opts.queryTimeoutMs;
     this.maxRows = opts.maxRows;
     this.apiKey = opts.apiKey;
+    this.tenantId = opts.tenantId;
+    this.onUnauthorized = hooks.onUnauthorized;
   }
 
   private async request<T>(
@@ -86,6 +90,7 @@ export class ParseableClient {
         method,
         headers: {
           "X-API-Key": this.apiKey,
+          ...(this.tenantId ? { "x-p-tenant": this.tenantId } : {}),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -95,6 +100,7 @@ export class ParseableClient {
 
       const text = await res.text();
       if (!res.ok) {
+        if (res.status === 401) this.onUnauthorized?.();
         const parsed = parseErrorBody(text);
         const hint = classifyStatus(res.status, method, path);
         const head = `Parseable ${method} ${path} → ${res.status} ${res.statusText}`;

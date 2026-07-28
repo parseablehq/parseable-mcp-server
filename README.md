@@ -7,7 +7,7 @@ Model Context Protocol server for [Parseable](https://www.parseable.com). Lets a
 | Mode | Transport | Auth | Use when |
 |------|-----------|------|----------|
 | `stdio` | Stdin/stdout | API key via env vars | Claude Desktop, Cursor, VS Code, local clients |
-| `http` | Streamable HTTP | Parseable URL + API key headers | Hosted deployments and remote clients |
+| `http` | Streamable HTTP | Cloud API key, or self-hosted URL + API key | Hosted deployments and remote clients |
 
 ---
 
@@ -36,7 +36,7 @@ Supported `--client` values: `claude-desktop`, `cursor`.
 
 ## Quickstart — HTTP (hosted)
 
-HTTP mode serves a setup page and MCP endpoint from one process. Every client supplies its own Parseable URL and API key.
+HTTP mode serves a setup page and MCP endpoint from one process. Cloud clients supply an API key. Self-hosted clients supply their Parseable URL and API key.
 
 ### 1. Set env vars
 
@@ -95,14 +95,16 @@ claude mcp add --transport http parseable https://mcp.your-domain.com/mcp --scop
 
 ## HTTP authentication
 
-Each `POST /mcp` request requires:
+Each `POST /mcp` request requires `X-API-Key` and supports two modes:
 
-| Header | Value |
-|--------|-------|
-| `X-Parseable-URL` | Parseable base URL (`http://` or `https://`) |
-| `X-API-Key` | Parseable API key |
+| Mode | Headers |
+|------|---------|
+| Cloud | `X-Parseable-Mode: cloud`, `X-API-Key` |
+| Self-hosted (default) | `X-Parseable-URL`, `X-API-Key` |
 
-HTTP server validates the URL and forwards the API key to that Parseable instance. By default, private and loopback Parseable URLs are rejected to limit SSRF. Set `PARSEABLE_MCP_ALLOW_PRIVATE=true` only for trusted deployments that need private network targets.
+`X-Parseable-Mode` is checked first when present. Omitting it selects self-hosted mode; clients do not need to send `X-Parseable-Mode: self-hosted`. In cloud mode, server validates API key with Parseable Cloud, caches returned URL and tenant routing in a bounded in-memory LRU for 24 hours, and sends `x-p-tenant` on Parseable requests. Cache is disposable; misses and process restarts resolve through Cloud again.
+
+For self-hosted mode, HTTP server validates supplied URL and forwards API key to that Parseable instance. By default, private and loopback Parseable URLs are rejected to limit SSRF. Set `PARSEABLE_MCP_ALLOW_PRIVATE=true` only for trusted deployments that need private network targets.
 
 ---
 
@@ -124,6 +126,11 @@ HTTP server validates the URL and forwards the API key to that Parseable instanc
 |-----|----------|---------|---------|
 | `PORT` | | 8787 | HTTP listen port |
 | `PARSEABLE_MCP_ALLOW_PRIVATE` | | false | Permit private/loopback Parseable URLs supplied in request headers |
+| `PARSEABLE_ORCHESTRATOR_URL` | Cloud only | - | Parseable Cloud orchestrator base URL |
+| `PARSEABLE_CLOUD_AUTH_TOKEN` | Cloud only | - | Service bearer token for API-key validation |
+| `PARSEABLE_CLOUD_CACHE_TTL_SECONDS` | | 86400 | Cloud routing LRU TTL |
+| `PARSEABLE_CLOUD_CACHE_MAX_ENTRIES` | | 10000 | Maximum cached cloud API-key routes |
+| `PARSEABLE_CLOUD_VALIDATE_TIMEOUT_MS` | | 10000 | Cloud validation timeout |
 
 ### OpenTelemetry (optional)
 

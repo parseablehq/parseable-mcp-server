@@ -106,6 +106,23 @@ describe("ParseableClient request behavior", () => {
     expect(headers["X-API-Key"]).toBe("key");
   });
 
+  it("sends cloud tenant header when configured", async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue(new Response("[]", { status: 200 }));
+    const client = new ParseableClient({ ...baseConfig, tenantId: "tenant-1" });
+    await client.listDatasets();
+    expect(fetchMock.mock.calls[0][1].headers["x-p-tenant"]).toBe("tenant-1");
+  });
+
+  it("calls unauthorized hook on downstream 401", async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValue(new Response("unauthorized", { status: 401 }));
+    const onUnauthorized = vi.fn();
+    const client = new ParseableClient(baseConfig, { onUnauthorized });
+    await expect(client.listDatasets()).rejects.toMatchObject({ status: 401 });
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
   it("strips trailing slashes from URL", () => {
     const client = new ParseableClient({
       ...baseConfig,

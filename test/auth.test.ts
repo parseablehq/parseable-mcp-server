@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "../src/auth.js";
+import { AuthError, assertNotPrivateUrl, parseAuthHeaders, parseRequestAuth } from "../src/auth.js";
 
 const goodHeaders = {
   "x-parseable-url": "https://parseable.example.com",
@@ -81,6 +81,45 @@ describe("parseAuthHeaders", () => {
     } catch (err) {
       expect((err as AuthError).status).toBe(400);
       expect((err as AuthError).message).toMatch(/http:\/\/ or https:\/\//);
+    }
+  });
+});
+
+describe("parseRequestAuth", () => {
+  it("preserves self-hosted behavior when mode is omitted", () => {
+    expect(parseRequestAuth(goodHeaders)).toEqual({
+      mode: "self-hosted",
+      url: "https://parseable.example.com",
+      apiKey: "secret",
+    });
+  });
+
+  it("accepts cloud mode with only API key", () => {
+    expect(parseRequestAuth({ "x-parseable-mode": "cloud", "x-api-key": "secret" })).toEqual({
+      mode: "cloud",
+      apiKey: "secret",
+    });
+  });
+
+  it("rejects URL in cloud mode", () => {
+    expect(() => parseRequestAuth({ ...goodHeaders, "x-parseable-mode": "cloud" })).toThrow(
+      /must not be supplied/,
+    );
+  });
+
+  it("rejects unknown mode", () => {
+    expect(() => parseRequestAuth({ ...goodHeaders, "x-parseable-mode": "enterprise" })).toThrow(
+      /cloud or self-hosted/,
+    );
+  });
+
+  it("validates an explicit mode before checking credentials", () => {
+    try {
+      parseRequestAuth({ "x-parseable-mode": "enterprise" });
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect((err as AuthError).status).toBe(400);
+      expect((err as AuthError).message).toMatch(/cloud or self-hosted/);
     }
   });
 });
