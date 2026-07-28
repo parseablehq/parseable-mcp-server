@@ -1,8 +1,10 @@
 import {
   IconArrowUpRight,
   IconCheck,
+  IconCloud,
   IconCopy,
   IconPlugConnected,
+  IconServer,
   IconTerminal2,
 } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
@@ -428,12 +430,17 @@ export function TwoWays() {
                       type="button"
                       aria-pressed={remoteMode === mode}
                       onClick={() => setRemoteMode(mode)}
-                      className={`cursor-pointer px-3 py-1.5 rounded-md font-inter text-xs transition-colors ${
+                      className={`inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-md font-inter text-xs transition-colors ${
                         remoteMode === mode
                           ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
                           : "text-black/40 hover:text-black/70"
                       }`}
                     >
+                      {mode === "cloud" ? (
+                        <IconCloud size={13} stroke={1.5} />
+                      ) : (
+                        <IconServer size={13} stroke={1.5} />
+                      )}
                       {mode === "cloud" ? "Parseable Cloud" : "Self-hosted"}
                     </button>
                   ))}
