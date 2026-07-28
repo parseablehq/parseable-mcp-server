@@ -110,6 +110,6 @@ Current: **95% statements / 98% functions / 95% lines / 108 tests**.
 
 ## Releasing
 
-Publishing a GitHub Release triggers `.github/workflows/release.yml`. The workflow verifies that the release tag matches the version in `package.json`, runs lint + build + test, then publishes the package to npm with provenance.
+Publishing a GitHub Release triggers `.github/workflows/release.yml`. The workflow verifies that the release tag matches the version in `package.json`, runs lint + build + test, then publishes the package to npm through trusted publishing with automatic provenance.
 
-Before the first release, add an npm granular access token with package write access and 2FA bypass as the `NPM_TOKEN` GitHub Actions repository secret. Create releases with a `v`-prefixed tag matching `package.json` (for example, package version `0.3.0` requires tag `v0.3.0`).
+Before the first release, configure a GitHub Actions trusted publisher in the package settings on npmjs.com. Use organization `parseablehq`, repository `parseable-mcp-server`, workflow `release.yml`, and allow `npm publish`. No npm token is required. Create releases with a `v`-prefixed tag matching `package.json` (for example, package version `0.3.0` requires tag `v0.3.0`).
