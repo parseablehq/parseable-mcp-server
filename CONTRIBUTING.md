@@ -99,7 +99,7 @@ Current: **95% statements / 98% functions / 95% lines / 108 tests**.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on push + PR to main: `npm ci` → `npm run lint` → `npm run build` → `npm test`. Node 20.
+`.github/workflows/ci.yml` runs on push + PR to main: `npm ci` → `npm run lint` → `npm run build:all` → `npm test`. Node 22.
 
 ## Deliberately excluded — won't be accepted
 
@@ -110,6 +110,6 @@ Current: **95% statements / 98% functions / 95% lines / 108 tests**.
 
 ## Releasing
 
-Tag-triggered via `.github/workflows/release.yml` (planned): on `git tag v1.x.y && git push --tags`, the workflow runs lint + build + test, publishes to npm, builds and pushes a Docker image to GHCR, and drafts a GitHub Release.
+Publishing a GitHub Release triggers `.github/workflows/release.yml`. The workflow verifies that the release tag matches the version in `package.json`, runs lint + build + test, then publishes the package to npm through trusted publishing with automatic provenance.
 
-For now: manual `npm publish` after `npm run build && npm test && npm run lint` pass locally.
+Before the first release, configure a GitHub Actions trusted publisher in the package settings on npmjs.com. Use organization `parseablehq`, repository `parseable-mcp-server`, workflow `release.yml`, and allow `npm publish`. No npm token is required. Create releases with a `v`-prefixed tag matching `package.json` (for example, package version `0.3.0` requires tag `v0.3.0`).
