@@ -5,6 +5,12 @@ export interface RequestCreds {
   apiKey: string;
 }
 
+export type ParseableMode = "cloud" | "self-hosted";
+
+export type RequestAuth =
+  | { mode: "cloud"; apiKey: string }
+  | { mode: "self-hosted"; apiKey: string; url: string };
+
 export class AuthError extends Error {
   constructor(
     public status: number,
@@ -15,7 +21,7 @@ export class AuthError extends Error {
   }
 }
 
-function header(
+export function header(
   headers: Headers | Record<string, string | string[] | undefined>,
   name: string,
 ): string | undefined {
@@ -25,6 +31,41 @@ function header(
   const v = headers[name.toLowerCase()] ?? headers[name];
   if (Array.isArray(v)) return v[0];
   return v;
+}
+
+export function parseRequestAuth(
+  headers: Headers | Record<string, string | string[] | undefined>,
+): RequestAuth {
+  const rawMode = header(headers, "X-Parseable-Mode");
+  const url = header(headers, "X-Parseable-URL");
+  const apiKey = header(headers, "X-API-Key");
+
+  // Mode is the primary selector. No mode means self-hosted for compatibility.
+  const mode = rawMode ?? "self-hosted";
+  if (mode !== "cloud" && mode !== "self-hosted") {
+    throw new AuthError(400, "X-Parseable-Mode must be cloud or self-hosted.");
+  }
+
+  if (!apiKey) {
+    throw new AuthError(401, "Missing required header: X-API-Key.");
+  }
+
+  if (mode === "cloud") {
+    if (url) {
+      throw new AuthError(400, "X-Parseable-URL must not be supplied in cloud mode.");
+    }
+    return { mode, apiKey };
+  }
+
+  if (!url) {
+    throw new AuthError(
+      401,
+      "Missing required header: X-Parseable-URL. Requests without X-Parseable-Mode use self-hosted mode.",
+    );
+  }
+
+  const creds = parseAuthHeaders(headers);
+  return { mode, ...creds };
 }
 
 export function parseAuthHeaders(

@@ -4,9 +4,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { type Context, Hono } from "hono";
-import { AuthError, assertNotPrivateUrl, parseAuthHeaders } from "./auth.js";
+import { AuthError, assertNotPrivateUrl, parseRequestAuth } from "./auth.js";
 import { buildMcpServer } from "./bootstrap.js";
 import { ParseableClient } from "./client.js";
+import { evictCloudRouting, resolveCloudRouting } from "./cloud.js";
+import type { Config } from "./config.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, "ui");
@@ -20,8 +22,9 @@ HTTP MCP endpoint:
   POST /mcp
 
 Required headers for static Parseable credentials:
-  X-Parseable-URL
   X-API-Key
+  X-Parseable-Mode: cloud (cloud only; omitted means self-hosted)
+  X-Parseable-URL (required when mode is omitted/self-hosted)
 `;
 
 export const app = new Hono();
@@ -85,24 +88,39 @@ app.get("/assets/*", async (c) => {
 
 app.get("/", serveRoot);
 
-function buildApiKeyClient(reqHeaders: Headers): {
+async function buildApiKeyClient(reqHeaders: Headers): Promise<{
   client: ParseableClient;
-  config: {
-    url: string;
-    apiKey: string;
-    maxRows: number;
-    queryTimeoutMs: number;
-  };
-} {
-  const creds = parseAuthHeaders(reqHeaders);
-  assertNotPrivateUrl(creds.url);
+  config: Config;
+}> {
+  const auth = parseRequestAuth(reqHeaders);
   const maxRows = Number(reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS);
   const queryTimeoutMs = Number(
     reqHeaders.get("X-Parseable-Query-Timeout-Ms") ?? DEFAULT_QUERY_TIMEOUT_MS,
   );
-  const config = {
-    url: creds.url,
-    apiKey: creds.apiKey,
+
+  if (auth.mode === "cloud") {
+    const routing = await resolveCloudRouting(auth.apiKey);
+    const config: Config = {
+      url: routing.url,
+      tenantId: routing.tenantId,
+      mode: "cloud",
+      apiKey: auth.apiKey,
+      maxRows,
+      queryTimeoutMs,
+    };
+    return {
+      client: new ParseableClient(config, {
+        onUnauthorized: () => evictCloudRouting(auth.apiKey),
+      }),
+      config,
+    };
+  }
+
+  assertNotPrivateUrl(auth.url);
+  const config: Config = {
+    url: auth.url,
+    apiKey: auth.apiKey,
+    mode: "self-hosted",
     maxRows,
     queryTimeoutMs,
   };
@@ -111,7 +129,7 @@ function buildApiKeyClient(reqHeaders: Headers): {
 
 async function handleMcpPost(c: Context) {
   try {
-    const built = buildApiKeyClient(c.req.raw.headers);
+    const built = await buildApiKeyClient(c.req.raw.headers);
 
     const mcp = buildMcpServer({ client: built.client, config: built.config });
 
@@ -122,7 +140,10 @@ async function handleMcpPost(c: Context) {
     return await transport.handleRequest(c.req.raw);
   } catch (err) {
     if (err instanceof AuthError) {
-      return c.json({ error: err.message }, err.status as 400 | 401);
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: err.status,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: message }, 500);
