@@ -22,7 +22,6 @@ function useCopy() {
 const HOSTED_URL = `${window.location.origin}/mcp`;
 const PARSEABLE_URL = "https://your-parseable.example.com";
 const API_KEY = "your-parseable-api-key";
-const HOSTED_COMMAND = `claude mcp add --transport http parseable ${HOSTED_URL} --scope user --header "X-Parseable-URL: ${PARSEABLE_URL}" --header "X-API-Key: ${API_KEY}"`;
 
 const DEMO_LOG_ROWS = [
   {
@@ -80,7 +79,7 @@ function Demo() {
         <div className="max-w-2xl mx-auto flex flex-col gap-4">
           {/* User message */}
           <div className="flex justify-end">
-            <div className="max-w-sm bg-[#3A3A8C] text-white rounded-xl rounded-tr-sm px-4 py-3 font-inter text-sm leading-6">
+            <div className="max-w-sm bg-parseableBlue-500 text-white rounded-xl rounded-tr-sm px-4 py-3 font-inter text-sm leading-6">
               Why is the payment service throwing errors? Show me recent logs.
             </div>
           </div>
@@ -97,9 +96,9 @@ function Demo() {
                 size={13}
                 stroke={1.5}
                 aria-hidden="true"
-                className="text-[#3A3A8C]"
+                className="text-parseableBlue-500"
               />
-              <span className="text-[#3A3A8C]">query_sql</span>
+              <span className="text-parseableBlue-500">query_sql</span>
               <span className="text-black/30">·</span>
               <span>
                 SELECT * FROM logs WHERE service = &apos;payment-service&apos;
@@ -208,7 +207,18 @@ function Demo() {
 
 export function TwoWays() {
   const [activeTab, setActiveTab] = useState<"hosted" | "local">("hosted");
+  const [remoteMode, setRemoteMode] = useState<"cloud" | "self-hosted">(
+    "cloud",
+  );
   const { copied, copy } = useCopy();
+  const hostedHeaders =
+    remoteMode === "cloud"
+      ? `X-Parseable-Mode: cloud\nX-API-Key: ${API_KEY}`
+      : `X-Parseable-URL: ${PARSEABLE_URL}\nX-API-Key: ${API_KEY}`;
+  const hostedCommand = `claude mcp add --transport http parseable ${HOSTED_URL} --scope user ${hostedHeaders
+    .split("\n")
+    .map((header) => `--header "${header}"`)
+    .join(" ")}`;
 
   const localConfig = JSON.stringify(
     {
@@ -292,8 +302,8 @@ export function TwoWays() {
                     Remote MCP
                   </h3>
                   <p className="font-inter text-sm text-black/55 leading-6">
-                    Connect to this deployed MCP endpoint. Each request supplies
-                    your Parseable URL and API key as headers.
+                    Connect to this deployed MCP endpoint. Cloud needs your API
+                    key; self-hosted also needs your Parseable URL.
                   </p>
                 </div>
                 <ul className="flex flex-col gap-3">
@@ -330,7 +340,7 @@ export function TwoWays() {
                   href="https://www.parseable.com/docs/mcp"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-[#3A3A8C] hover:text-[#2F2F70] hover:underline transition-colors mt-2"
+                  className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors mt-2"
                 >
                   Remote MCP setup guide <IconArrowUpRight size={14} />
                 </a>
@@ -390,7 +400,7 @@ export function TwoWays() {
                     href="https://www.parseable.com/docs/mcp"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-[#3A3A8C] hover:text-[#2F2F70] hover:underline transition-colors"
+                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors"
                   >
                     Local MCP setup guide <IconArrowUpRight size={14} />
                   </a>
@@ -398,7 +408,7 @@ export function TwoWays() {
                     href="https://github.com/parseablehq/parseable-mcp-server"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-[#3A3A8C] hover:text-[#2F2F70] hover:underline transition-colors"
+                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors"
                   >
                     View on GitHub <IconArrowUpRight size={14} />
                   </a>
@@ -411,24 +421,36 @@ export function TwoWays() {
           <div className="flex flex-col gap-4">
             {activeTab === "hosted" ? (
               <>
+                <div className="inline-flex self-start rounded-lg p-1 border border-black/[0.07] bg-black/2">
+                  {(["cloud", "self-hosted"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={remoteMode === mode}
+                      onClick={() => setRemoteMode(mode)}
+                      className={`cursor-pointer px-3 py-1.5 rounded-md font-inter text-xs transition-colors ${
+                        remoteMode === mode
+                          ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
+                          : "text-black/40 hover:text-black/70"
+                      }`}
+                    >
+                      {mode === "cloud" ? "Parseable Cloud" : "Self-hosted"}
+                    </button>
+                  ))}
+                </div>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         1. Add the Parseable MCP server
                       </p>
                       <button
                         type="button"
-                        onClick={() =>
-                          copy(
-                            HOSTED_COMMAND,
-                            "tw-step1",
-                          )
-                        }
-                        className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
+                        onClick={() => copy(hostedCommand, "tw-step1")}
+                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
                       >
                         {copied === "tw-step1" ? (
                           <IconCheck
@@ -442,44 +464,44 @@ export function TwoWays() {
                       </button>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
+                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>{HOSTED_COMMAND}</code>
+                      <code>{hostedCommand}</code>
                     </pre>
                   </div>
                 </div>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         2. Credentials sent with every request
                       </p>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A]"
+                      className="px-4 py-3 text-[13px] text-coolGray-200"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>{`X-Parseable-URL: ${PARSEABLE_URL}\nX-API-Key: ${API_KEY}`}</code>
+                      <code>{hostedHeaders}</code>
                     </pre>
                   </div>
                 </div>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         Endpoint URL
                       </p>
                       <button
                         type="button"
                         onClick={() => copy(HOSTED_URL, "tw-url")}
-                        className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
+                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
                       >
                         {copied === "tw-url" ? (
                           <IconCheck
@@ -493,7 +515,7 @@ export function TwoWays() {
                       </button>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
+                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
                       <code>{HOSTED_URL}</code>
@@ -505,10 +527,10 @@ export function TwoWays() {
               <>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         1. Install
                       </p>
@@ -520,7 +542,7 @@ export function TwoWays() {
                             "tw-install",
                           )
                         }
-                        className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
+                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
                       >
                         {copied === "tw-install" ? (
                           <IconCheck
@@ -534,7 +556,7 @@ export function TwoWays() {
                       </button>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A]"
+                      className="px-4 py-3 text-[13px] text-coolGray-200"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
                       <code>npx -y @parseable/parseable-mcp-server init</code>
@@ -543,17 +565,17 @@ export function TwoWays() {
                 </div>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         2. Configure
                       </p>
                       <button
                         type="button"
                         onClick={() => copy(localConfig, "tw-config")}
-                        className="text-[#71717A] hover:text-[#14151A] transition-colors shrink-0"
+                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
                       >
                         {copied === "tw-config" ? (
                           <IconCheck
@@ -567,7 +589,7 @@ export function TwoWays() {
                       </button>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
+                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
                       <code>{localConfig}</code>
@@ -576,16 +598,16 @@ export function TwoWays() {
                 </div>
                 <div>
                   <div
-                    className="rounded-xl border border-[#E4E4E7] overflow-hidden"
+                    className="rounded-xl border border-coolGray-900 overflow-hidden"
                     style={{ background: "rgba(244,244,245,0.5)" }}
                   >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-[#E4E4E7]">
+                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
                         3. Restart your MCP client
                       </p>
                     </div>
                     <pre
-                      className="px-4 py-3 text-[13px] text-[#27272A] overflow-x-auto"
+                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
                       <code>Parseable tools appear after restart</code>
