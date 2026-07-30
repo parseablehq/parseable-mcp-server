@@ -8,6 +8,7 @@ export interface ClientTarget {
   name: string;
   configPath: string;
   configKey: "mcpServers" | "servers";
+  platform: string;
 }
 
 export interface InitArgs {
@@ -49,30 +50,35 @@ export function getClientTargets(
       name: "Claude Code",
       configPath: join(home, ".claude.json"),
       configKey: "mcpServers",
+      platform: plat,
     },
     {
       id: "claude-desktop",
       name: "Claude for Desktop",
       configPath: claudeDesktopPath,
       configKey: "mcpServers",
+      platform: plat,
     },
     {
       id: "cursor",
       name: "Cursor",
       configPath: join(home, ".cursor", "mcp.json"),
       configKey: "mcpServers",
+      platform: plat,
     },
     {
       id: "vscode",
       name: "VS Code",
       configPath: vscodeBaseDir("Code"),
       configKey: "servers",
+      platform: plat,
     },
     {
       id: "vscode-insiders",
       name: "VS Code Insiders",
       configPath: vscodeBaseDir("Code - Insiders"),
       configKey: "servers",
+      platform: plat,
     },
   ];
 }
@@ -81,8 +87,12 @@ export function parseInitArgs(argv: string[]): InitArgs {
   const args: InitArgs = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--mode" && (argv[i + 1] === "cloud" || argv[i + 1] === "self-hosted")) {
-      args.mode = argv[++i] as ParseableMode;
+    if (a === "--mode") {
+      const mode = argv[++i];
+      if (mode !== "cloud" && mode !== "self-hosted") {
+        throw new Error('--mode must be either "cloud" or "self-hosted"');
+      }
+      args.mode = mode;
     } else if (a === "--url" && argv[i + 1]) args.url = argv[++i];
     else if (a === "--api-key" && argv[i + 1]) args.apiKey = argv[++i];
     else if (a === "--client" && argv[i + 1]) args.client = argv[++i];
@@ -94,32 +104,50 @@ export function mergeConfig(
   existing: Record<string, unknown>,
   configKey: "mcpServers" | "servers",
   creds: InitCredentials,
+  clientId?: string,
+  plat: string = platform(),
 ): Record<string, unknown> {
+  const stdioEntry = (args: string[], env: Record<string, string>) =>
+    plat === "win32"
+      ? { command: "cmd", args: ["/c", "npx", ...args], env }
+      : { command: "npx", args, env };
+
   const entry =
     creds.mode === "cloud"
-      ? {
-          type: "http",
-          url: CLOUD_MCP_URL,
-          headers: {
-            "X-Parseable-Mode": "cloud",
-            "X-API-Key": creds.apiKey,
-          },
-        }
-      : {
-          command: "npx",
-          args: ["-y", "@parseable/parseable-mcp-server"],
-          env: {
-            PARSEABLE_URL: creds.url,
-            PARSEABLE_API_KEY: creds.apiKey,
-          },
-        };
+      ? clientId === "claude-desktop"
+        ? stdioEntry(
+            [
+              "-y",
+              "mcp-remote@latest",
+              CLOUD_MCP_URL,
+              "--header",
+              "X-Parseable-Mode:cloud",
+              "--header",
+              `X-API-Key:\${PARSEABLE_API_KEY}`,
+            ],
+            {
+              PARSEABLE_API_KEY: creds.apiKey,
+            },
+          )
+        : {
+            type: "http",
+            url: CLOUD_MCP_URL,
+            headers: {
+              "X-Parseable-Mode": "cloud",
+              "X-API-Key": creds.apiKey,
+            },
+          }
+      : stdioEntry(["-y", "@parseable/parseable-mcp-server"], {
+          PARSEABLE_URL: creds.url,
+          PARSEABLE_API_KEY: creds.apiKey,
+        });
 
   const servers = (existing[configKey] as Record<string, unknown>) ?? {};
   servers.Parseable = entry;
   return { ...existing, [configKey]: servers };
 }
 
-function writeClientConfig(target: ClientTarget, creds: InitCredentials): void {
+export function writeClientConfig(target: ClientTarget, creds: InitCredentials): void {
   let existing: Record<string, unknown> = {};
   if (existsSync(target.configPath)) {
     try {
@@ -137,7 +165,7 @@ function writeClientConfig(target: ClientTarget, creds: InitCredentials): void {
     mkdirSync(dirname(target.configPath), { recursive: true });
   }
 
-  const merged = mergeConfig(existing, target.configKey, creds);
+  const merged = mergeConfig(existing, target.configKey, creds, target.id, target.platform);
   writeFileSync(target.configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 }
 
