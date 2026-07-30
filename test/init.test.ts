@@ -2,9 +2,19 @@ import { describe, expect, it } from "vitest";
 import { getClientTargets, mergeConfig, parseInitArgs } from "../src/init.js";
 
 describe("parseInitArgs", () => {
-  it("parses --url --api-key --client", () => {
-    const a = parseInitArgs(["--url", "http://x", "--api-key", "key", "--client", "cursor"]);
+  it("parses --mode --url --api-key --client", () => {
+    const a = parseInitArgs([
+      "--mode",
+      "self-hosted",
+      "--url",
+      "http://x",
+      "--api-key",
+      "key",
+      "--client",
+      "cursor",
+    ]);
     expect(a).toEqual({
+      mode: "self-hosted",
       url: "http://x",
       apiKey: "key",
       client: "cursor",
@@ -78,7 +88,7 @@ describe("getClientTargets", () => {
 });
 
 describe("mergeConfig", () => {
-  const creds = { url: "http://x", apiKey: "key" };
+  const creds = { mode: "self-hosted" as const, url: "http://x", apiKey: "key" };
 
   it("adds Parseable entry under mcpServers", () => {
     const merged = mergeConfig({}, "mcpServers", creds);
@@ -100,6 +110,22 @@ describe("mergeConfig", () => {
     const merged = mergeConfig({}, "servers", creds);
     expect(merged.servers).toBeDefined();
     expect(merged.mcpServers).toBeUndefined();
+  });
+
+  it("adds hosted HTTP entry for cloud mode without a Parseable URL", () => {
+    const merged = mergeConfig({}, "mcpServers", { mode: "cloud", apiKey: "cloud-key" });
+    expect(merged).toEqual({
+      mcpServers: {
+        Parseable: {
+          type: "http",
+          url: "https://mcp.parseable.com/mcp",
+          headers: {
+            "X-Parseable-Mode": "cloud",
+            "X-API-Key": "cloud-key",
+          },
+        },
+      },
+    });
   });
 
   it("preserves other top-level keys", () => {
@@ -126,7 +152,7 @@ describe("mergeConfig", () => {
     const merged = mergeConfig(
       { mcpServers: { Parseable: { command: "node", args: ["old.js"] } } },
       "mcpServers",
-      { url: "http://new", apiKey: "key" },
+      { mode: "self-hosted", url: "http://new", apiKey: "key" },
     );
     const servers = merged.mcpServers as Record<string, unknown>;
     const parseable = servers.Parseable as { env: Record<string, string> };
