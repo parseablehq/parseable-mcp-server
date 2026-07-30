@@ -3,18 +3,34 @@ import type { ToolDef } from "./types.js";
 
 const schema = {
   spec: z.record(z.unknown()).describe(
-    `Full alert spec, camelCase JSON. Required:
-- title (string)
-- query (string, SQL SELECT returning a single numeric column)
-- alertType ("threshold" | "anomaly" | "forecast")
-- thresholdConfig { operator: ">"|"<"|"="|">="|"<="|"!=", value: number }
-- evalConfig { rollingWindow: { evalStart: "5m", evalEnd: "now", evalFrequency: 1 } }
-- targets (string[] - target UUIDs; empty array if no destinations)
+    `Complete alert object sent as the POST /api/v1/alerts request body. Use camelCase JSON:
+{
+  "title": "High error count",
+  "alertType": "threshold",
+  "query": "SELECT ... FROM logs ...",
+  "severity": "high",
+  "thresholdConfig": { "operator": ">", "value": 10 },
+  "evalConfig": {
+    "rollingWindow": {
+      "evalStart": "10 minutes",
+      "evalEnd": "now",
+      "evalFrequency": 10
+    }
+  },
+  "anomalyConfig": { "historicDuration": "1d" },
+  "forecastConfig": { "historicDuration": "1d", "forecastDuration": "3h" },
+  "notificationConfig": { "interval": 1 },
+  "targets": ["target-id"],
+  "tags": []
+}
 
-Optional:
-- severity ("critical"|"high"|"medium"|"low", default "medium")
-- tags (string[])
-- notificationConfig (object)
+Required by the Prism create-alert flow: title, alertType, query, severity,
+thresholdConfig, evalConfig, anomalyConfig, forecastConfig,
+notificationConfig, targets, and tags. thresholdConfig.value and both interval
+fields are numbers. evalStart uses a duration such as "10 minutes"; evalEnd is
+"now"; evalFrequency is minutes. targets must contain valid alert-target IDs.
+For threshold alerts, use alertType "threshold". Prism currently shows anomaly
+and forecast as unavailable creation modes; retain their default config objects.
 
 Reference: https://www.parseable.com/docs/user-guide/alerting`,
   ),
@@ -30,17 +46,22 @@ BEFORE calling this tool, gather inputs from the user ONE QUESTION AT A TIME. Do
 1. "What should this alert be called?" → title
 2. "Which dataset should it watch?" → call list_datasets if user is unsure, then pick
 3. "What condition should trigger it?" → translate user's natural-language condition into:
-   - a SQL SELECT against the dataset that returns a single numeric column
+   - alert SQL against the selected dataset, matching Parseable's alert-query format
    - operator from > < = >= <= !=
    - numeric threshold value
    Confirm the translated SQL + operator + value back to the user.
-4. "How far back should each check look?" → evalStart (e.g. "5m", "15m", "1h")
+4. "How far back should each check look?" → evalStart (e.g. "5 minutes", "15 minutes", "1 hour")
 5. "How often should it evaluate?" → evalFrequency in minutes (integer)
-6. "Severity: critical, high, medium, or low?" → default medium
+6. "Severity: critical, high, medium, or low?" → default high
 7. "Any tags? (comma-separated, optional)" → tags array, empty if none
-8. "Notification targets?" → call list_alert_targets to fetch existing targets, present them as a numbered list, ask user to pick by number/name. Collect chosen target IDs into the targets array. If no targets exist or user wants none, use an empty array.
+8. "Notification targets?" → call list_alert_targets to fetch existing targets, present them as a numbered list, ask user to pick by number/name. Collect chosen target IDs into the targets array. Prism requires at least one target to create an alert.
 
-Then show the fully assembled JSON spec to the user and ask "Create this alert?" Only call create_alert after explicit confirmation. If user wants edits, update fields and re-confirm.`,
+Assemble alertType "threshold", evalEnd "now", anomalyConfig
+{ historicDuration: "1d" }, forecastConfig { historicDuration: "1d",
+forecastDuration: "3h" }, and notificationConfig { interval: 1 } unless the user
+requests supported alternatives. Then show the complete JSON spec and ask "Create
+this alert?" Only call create_alert after explicit confirmation. If user wants
+edits, update fields and re-confirm.`,
   inputSchema: schema,
   handler: async (args, { client }) => {
     return await client.createAlert(args.spec);

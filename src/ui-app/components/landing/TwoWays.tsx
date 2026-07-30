@@ -222,23 +222,6 @@ export function TwoWays() {
     .map((header) => `--header "${header}"`)
     .join(" ")}`;
 
-  const localConfig = JSON.stringify(
-    {
-      mcpServers: {
-        parseable: {
-          command: "npx",
-          args: ["-y", "@parseable/parseable-mcp-server"],
-          env: {
-            PARSEABLE_URL: "https://your-instance.parseable.com",
-            PARSEABLE_API_KEY: "your-api-key",
-          },
-        },
-      },
-    },
-    null,
-    2,
-  );
-
   return (
     <section className="mt-40">
       <div className="max-w-page mx-auto px-4 md:px-0">
@@ -539,13 +522,13 @@ export function TwoWays() {
                   >
                     <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        1. Install
+                        1. Install and configure
                       </p>
                       <button
                         type="button"
                         onClick={() =>
                           copy(
-                            "npx -y @parseable/parseable-mcp-server init",
+                            "npx -y @parseable/parseable-mcp-server@latest init",
                             "tw-install",
                           )
                         }
@@ -566,7 +549,7 @@ export function TwoWays() {
                       className="px-4 py-3 text-[13px] text-coolGray-200"
                       style={{ fontFamily: '"JetBrains Mono", monospace' }}
                     >
-                      <code>npx -y @parseable/parseable-mcp-server init</code>
+                      <code>npx -y @parseable/parseable-mcp-server@latest init</code>
                     </pre>
                   </div>
                 </div>
@@ -577,40 +560,7 @@ export function TwoWays() {
                   >
                     <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
                       <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        2. Configure
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => copy(localConfig, "tw-config")}
-                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
-                      >
-                        {copied === "tw-config" ? (
-                          <IconCheck
-                            size={13}
-                            stroke={2}
-                            className="text-[#00A896]"
-                          />
-                        ) : (
-                          <IconCopy size={13} stroke={1.5} />
-                        )}
-                      </button>
-                    </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>{localConfig}</code>
-                    </pre>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        3. Restart your MCP client
+                        2. Restart your MCP client
                       </p>
                     </div>
                     <pre
