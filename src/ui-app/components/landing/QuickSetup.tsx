@@ -101,6 +101,8 @@ type ParseableMode = "cloud" | "self-hosted";
 const HOSTED_URL = `${window.location.origin}/mcp`;
 const PARSEABLE_URL = "https://your-parseable.example.com";
 const API_KEY = "your-parseable-api-key";
+const INSTALL_COMMAND = "npx -y @parseable/parseable-mcp-server@latest init";
+const INIT_CLIENTS = new Set<Client>(["Claude Code", "Cursor", "VS Code", "Claude Desktop"]);
 function authHeaders(mode: ParseableMode) {
   return mode === "cloud"
     ? { "X-Parseable-Mode": "cloud", "X-API-Key": API_KEY }
@@ -167,7 +169,7 @@ http_headers = { ${Object.entries(headers)
               mcpServers: {
                 parseable: {
                   command: "npx",
-                  args: ["-y", "@parseable/parseable-mcp-server"],
+                  args: ["-y", "@parseable/parseable-mcp-server@latest"],
                   env: {
                     PARSEABLE_URL,
                     PARSEABLE_API_KEY: API_KEY,
@@ -286,10 +288,6 @@ export function QuickSetup() {
   const [mode, setMode] = useState<ParseableMode>("cloud");
   const { copied, copy } = useCopy();
   const manual = manualConfig(mode)[active];
-  const headers = authHeaders(mode);
-  const cliHeaders = Object.entries(headers)
-    .map(([key, value]) => `--header "${key}: ${value}"`)
-    .join(" ");
 
   return (
     <section className="mt-16 pb-8">
@@ -350,34 +348,32 @@ export function QuickSetup() {
           {/* Tab content */}
           <div id="setup-panel" className="p-6 flex flex-col gap-4 min-w-0">
             <p className="font-inter text-sm text-black/55 leading-6">
-              {mode === "cloud"
-                ? "Connect to the remote MCP endpoint with your Parseable Cloud API key. Cloud routing is resolved automatically; no Parseable URL or OAuth sign-in is required."
-                : active === "Claude Desktop"
-                  ? "Run the server locally over stdio for self-hosted Parseable. Replace the URL and API key, save, then restart Claude Desktop."
-                  : "Add your self-hosted Parseable URL and API key. Requests authenticate through headers; no OAuth sign-in is required."}
+              {INIT_CLIENTS.has(active)
+                ? `Run interactive setup, select ${active}, then choose Parseable Cloud or Self-hosted. The installer writes the configuration for you.`
+                : "This client is not supported by interactive setup yet. Add the configuration manually."}
             </p>
-            {active === "Claude Code" && (
-              <>
-                <div>
-                  <SectionLabel>CLI</SectionLabel>
-                  <DarkCodeBlock
-                    content={`claude mcp add --transport http parseable ${HOSTED_URL} --scope user ${cliHeaders}`}
-                    copyKey="cli-cc"
-                    copied={copied}
-                    onCopy={copy}
-                  />
-                </div>
-              </>
+            {INIT_CLIENTS.has(active) && (
+              <div>
+                <SectionLabel>Install and configure</SectionLabel>
+                <DarkCodeBlock
+                  content={INSTALL_COMMAND}
+                  copyKey={`install-${active}`}
+                  copied={copied}
+                  onCopy={copy}
+                />
+              </div>
             )}
-            <div>
-              <SectionLabel>Manual configuration · {manual.file}</SectionLabel>
-              <DarkCodeBlock
-                content={manual.content}
-                copyKey={`config-${active}`}
-                copied={copied}
-                onCopy={copy}
-              />
-            </div>
+            {!INIT_CLIENTS.has(active) && (
+              <div>
+                <SectionLabel>Manual configuration · {manual.file}</SectionLabel>
+                <DarkCodeBlock
+                  content={manual.content}
+                  copyKey={`config-${active}`}
+                  copied={copied}
+                  onCopy={copy}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
