@@ -1,5 +1,8 @@
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { getClientTargets, mergeConfig, parseInitArgs } from "../src/init.js";
+import { getClientTargets, mergeConfig, parseInitArgs, writeClientConfig } from "../src/init.js";
 
 describe("parseInitArgs", () => {
   it("parses --mode --url --api-key --client", () => {
@@ -31,6 +34,18 @@ describe("parseInitArgs", () => {
 
   it("ignores flag without value", () => {
     expect(parseInitArgs(["--url"])).toEqual({});
+  });
+
+  it("rejects an invalid mode", () => {
+    expect(() => parseInitArgs(["--mode", "enterprise"])).toThrow(
+      '--mode must be either "cloud" or "self-hosted"',
+    );
+  });
+
+  it("rejects mode without a value", () => {
+    expect(() => parseInitArgs(["--mode"])).toThrow(
+      '--mode must be either "cloud" or "self-hosted"',
+    );
   });
 });
 
@@ -154,6 +169,40 @@ describe("mergeConfig", () => {
     });
   });
 
+  it("wraps self-hosted npx with cmd on Windows", () => {
+    const merged = mergeConfig({}, "mcpServers", creds, "claude-code", "win32");
+    const servers = merged.mcpServers as Record<string, unknown>;
+    expect(servers.Parseable).toMatchObject({
+      command: "cmd",
+      args: ["/c", "npx", "-y", "@parseable/parseable-mcp-server"],
+    });
+  });
+
+  it("wraps the Claude Desktop cloud bridge with cmd on Windows", () => {
+    const merged = mergeConfig(
+      {},
+      "mcpServers",
+      { mode: "cloud", apiKey: "cloud-key" },
+      "claude-desktop",
+      "win32",
+    );
+    const servers = merged.mcpServers as Record<string, unknown>;
+    expect(servers.Parseable).toMatchObject({
+      command: "cmd",
+      args: [
+        "/c",
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.parseable.com/mcp",
+        "--header",
+        "X-Parseable-Mode:cloud",
+        "--header",
+        `X-API-Key:\${PARSEABLE_API_KEY}`,
+      ],
+    });
+  });
+
   it("preserves other top-level keys", () => {
     const merged = mergeConfig(
       { mcpServers: {}, preferences: { theme: "dark" } },
@@ -183,5 +232,32 @@ describe("mergeConfig", () => {
     const servers = merged.mcpServers as Record<string, unknown>;
     const parseable = servers.Parseable as { env: Record<string, string> };
     expect(parseable.env.PARSEABLE_URL).toBe("http://new");
+  });
+});
+
+describe("writeClientConfig", () => {
+  it("writes a usable config and backs up an existing file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "parseable-init-"));
+    const configPath = join(dir, "mcp.json");
+    writeFileSync(configPath, JSON.stringify({ mcpServers: { Existing: { command: "x" } } }));
+
+    writeClientConfig(
+      {
+        id: "cursor",
+        name: "Cursor",
+        configPath,
+        configKey: "mcpServers",
+        platform: "darwin",
+      },
+      { mode: "cloud", apiKey: "cloud-key" },
+    );
+
+    const written = JSON.parse(readFileSync(configPath, "utf8"));
+    expect(written.mcpServers.Existing).toEqual({ command: "x" });
+    expect(written.mcpServers.Parseable).toMatchObject({
+      type: "http",
+      url: "https://mcp.parseable.com/mcp",
+    });
+    expect(existsSync(`${configPath}.bak`)).toBe(true);
   });
 });
