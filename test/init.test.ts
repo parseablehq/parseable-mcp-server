@@ -128,6 +128,32 @@ describe("mergeConfig", () => {
     });
   });
 
+  it("uses an stdio bridge for Claude Desktop cloud mode", () => {
+    const merged = mergeConfig(
+      {},
+      "mcpServers",
+      { mode: "cloud", apiKey: "cloud-key" },
+      "claude-desktop",
+    );
+    expect(merged).toEqual({
+      mcpServers: {
+        Parseable: {
+          command: "npx",
+          args: [
+            "-y",
+            "mcp-remote@latest",
+            "https://mcp.parseable.com/mcp",
+            "--header",
+            "X-Parseable-Mode:cloud",
+            "--header",
+            `X-API-Key:\${PARSEABLE_API_KEY}`,
+          ],
+          env: { PARSEABLE_API_KEY: "cloud-key" },
+        },
+      },
+    });
+  });
+
   it("preserves other top-level keys", () => {
     const merged = mergeConfig(
       { mcpServers: {}, preferences: { theme: "dark" } },

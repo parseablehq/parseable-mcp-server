@@ -94,17 +94,34 @@ export function mergeConfig(
   existing: Record<string, unknown>,
   configKey: "mcpServers" | "servers",
   creds: InitCredentials,
+  clientId?: string,
 ): Record<string, unknown> {
   const entry =
     creds.mode === "cloud"
-      ? {
-          type: "http",
-          url: CLOUD_MCP_URL,
-          headers: {
-            "X-Parseable-Mode": "cloud",
-            "X-API-Key": creds.apiKey,
-          },
-        }
+      ? clientId === "claude-desktop"
+        ? {
+            command: "npx",
+            args: [
+              "-y",
+              "mcp-remote@latest",
+              CLOUD_MCP_URL,
+              "--header",
+              "X-Parseable-Mode:cloud",
+              "--header",
+              `X-API-Key:\${PARSEABLE_API_KEY}`,
+            ],
+            env: {
+              PARSEABLE_API_KEY: creds.apiKey,
+            },
+          }
+        : {
+            type: "http",
+            url: CLOUD_MCP_URL,
+            headers: {
+              "X-Parseable-Mode": "cloud",
+              "X-API-Key": creds.apiKey,
+            },
+          }
       : {
           command: "npx",
           args: ["-y", "@parseable/parseable-mcp-server"],
@@ -137,7 +154,7 @@ function writeClientConfig(target: ClientTarget, creds: InitCredentials): void {
     mkdirSync(dirname(target.configPath), { recursive: true });
   }
 
-  const merged = mergeConfig(existing, target.configKey, creds);
+  const merged = mergeConfig(existing, target.configKey, creds, target.id);
   writeFileSync(target.configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 }
 
