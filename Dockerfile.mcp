@@ -1,0 +1,6 @@
+ARG BASE_IMAGE=quay.io/parseablehq/parseable-mcp-server:edge
+FROM ${BASE_IMAGE}
+
+HEALTHCHECK NONE
+
+CMD ["node", "dist/server.js", "run"]
