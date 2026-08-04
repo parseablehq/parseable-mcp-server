@@ -5,7 +5,7 @@ import { tools } from "./tools/index.js";
 import type { ToolContext } from "./tools/types.js";
 import { errorResult, jsonResult } from "./tools/types.js";
 
-const SERVER_VERSION = "0.2.13";
+const SERVER_VERSION = "0.2.14";
 
 export function buildMcpServer(ctx: ToolContext): McpServer {
   const server = new McpServer({
