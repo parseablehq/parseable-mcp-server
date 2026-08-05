@@ -1,7 +1,7 @@
 {
   "name": "parseable",
   "displayName": "Parseable",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "Query and manage Parseable logs, metrics, datasets, and alerts from Cursor.",
   "author": {
     "name": "Parseable"
@@ -20,10 +20,6 @@
     "mcp"
   ],
   "category": "developer-tools",
-  "tags": [
-    "observability",
-    "monitoring",
-    "mcp"
-  ],
+  "tags": ["observability", "monitoring", "mcp"],
   "mcpServers": "./mcp.json"
 }

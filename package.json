@@ -1,6 +1,6 @@
 {
   "name": "@parseable/parseable-mcp-server",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "mcpName": "io.github.parseablehq/parseable-mcp-server",
   "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
   "repository": {
