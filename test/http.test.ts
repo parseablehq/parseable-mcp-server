@@ -45,6 +45,14 @@ describe("HTTP routes", () => {
     expect(body).toMatch(/X-Parseable-URL/);
   });
 
+  it("GET /mcp returns 405 for stateless Streamable HTTP clients", async () => {
+    const res = await app.request("/mcp", {
+      headers: { accept: "text/event-stream" },
+    });
+    expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("POST");
+  });
+
   it("POST /mcp without auth returns 401", async () => {
     const res = await app.fetch(
       new Request("http://localhost/mcp", {
