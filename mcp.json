@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "parseable": {
+      "type": "http",
+      "url": "https://mcp.parseable.com/mcp",
+      "headers": {
+        "X-API-Key": "${env:PARSEABLE_API_KEY}",
+        "X-Parseable-Mode": "${env:PARSEABLE_MODE}",
+        "X-Parseable-URL": "${env:PARSEABLE_URL}"
+      }
+    }
+  }
+}

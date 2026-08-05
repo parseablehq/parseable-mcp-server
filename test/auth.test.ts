@@ -107,6 +107,12 @@ describe("parseRequestAuth", () => {
     );
   });
 
+  it("requires URL when self-hosted mode is explicit", () => {
+    expect(() =>
+      parseRequestAuth({ "x-parseable-mode": "self-hosted", "x-api-key": "secret" }),
+    ).toThrow(/X-Parseable-URL/);
+  });
+
   it("rejects unknown mode", () => {
     expect(() => parseRequestAuth({ ...goodHeaders, "x-parseable-mode": "enterprise" })).toThrow(
       /cloud or self-hosted/,
