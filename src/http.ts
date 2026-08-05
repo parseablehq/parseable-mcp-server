@@ -88,6 +88,18 @@ app.get("/assets/*", async (c) => {
 
 app.get("/", serveRoot);
 
+// Streamable HTTP clients probe GET /mcp for an optional standalone SSE stream.
+// This server is stateless and POST-only, so the MCP transport requires 405
+// rather than 404 to signal that clients should continue without that stream.
+app.get(
+  "/mcp",
+  () =>
+    new Response(null, {
+      status: 405,
+      headers: { Allow: "POST" },
+    }),
+);
+
 async function buildApiKeyClient(reqHeaders: Headers): Promise<{
   client: ParseableClient;
   config: Config;
