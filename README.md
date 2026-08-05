@@ -32,6 +32,35 @@ npx -y @parseable/parseable-mcp-server init \
 
 Supported `--client` values: `claude-desktop`, `cursor`.
 
+### Cursor Marketplace plugin
+
+The repository also contains a native Cursor plugin manifest. Marketplace installs connect to `https://mcp.parseable.com/mcp` and read credentials from the environment.
+
+Set these variables before starting Cursor:
+
+```bash
+export PARSEABLE_URL="https://your-parseable.example.com"
+export PARSEABLE_API_KEY="your-api-key"
+export PARSEABLE_MODE="self-hosted"
+```
+
+`PARSEABLE_API_KEY` and `PARSEABLE_MODE` are required by the Cursor plugin. Use `PARSEABLE_MODE=cloud` and omit `PARSEABLE_URL` for Parseable Cloud. Use `PARSEABLE_MODE=self-hosted` with `PARSEABLE_URL` for self-hosted Parseable.
+
+```bash
+# Parseable Cloud
+export PARSEABLE_MODE="cloud"
+export PARSEABLE_API_KEY="your-cloud-api-key"
+unset PARSEABLE_URL
+```
+
+Then install the Parseable plugin from the Cursor Marketplace. If Cursor was opened from the macOS dock or another GUI launcher that does not inherit shell variables, use the interactive setup instead:
+
+```bash
+npx -y @parseable/parseable-mcp-server init --client cursor
+```
+
+Plugin metadata lives in `.cursor-plugin/plugin.json`; its MCP connection configuration lives in `mcp.json`. Keep the plugin version aligned with the npm package version when releasing.
+
 ---
 
 ## Quickstart — HTTP (hosted)
