@@ -1,6 +1,12 @@
 import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
-import { IconCheck, IconCloud, IconCopy, IconServer } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconCloud,
+  IconCopy,
+  IconServer,
+} from "@tabler/icons-react";
 
 type CopyKey = string;
 
@@ -98,11 +104,30 @@ const CLIENTS = [
 type Client = (typeof CLIENTS)[number];
 type ParseableMode = "cloud" | "self-hosted";
 
+type ClientGroup = {
+  id: "init" | "codex" | "windsurf";
+  clients: Client[];
+};
+
+const GROUPS: ClientGroup[] = [
+  {
+    id: "init",
+    clients: ["Claude Code", "Cursor", "VS Code", "Claude Desktop"],
+  },
+  {
+    id: "codex",
+    clients: ["ChatGPT Desktop", "Codex"],
+  },
+  {
+    id: "windsurf",
+    clients: ["Windsurf"],
+  },
+];
+
 const HOSTED_URL = `${window.location.origin}/mcp`;
 const PARSEABLE_URL = "https://your-parseable.example.com";
 const API_KEY = "your-parseable-api-key";
 const INSTALL_COMMAND = "npx -y @parseable/parseable-mcp-server@latest init";
-const INIT_CLIENTS = new Set<Client>(["Claude Code", "Cursor", "VS Code", "Claude Desktop"]);
 function authHeaders(mode: ParseableMode) {
   return mode === "cloud"
     ? { "X-Parseable-Mode": "cloud", "X-API-Key": API_KEY }
@@ -204,70 +229,41 @@ http_headers = { ${Object.entries(headers)
   };
 }
 
-function SectionDivider() {
-  return (
-    <div
-      className="w-full h-px"
-      style={{
-        background:
-          "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.08) 15%, rgba(0,0,0,0.08) 85%, transparent 100%)",
-      }}
-    />
-  );
-}
-
 function DarkCodeBlock({
   content,
   copyKey,
   copied,
   onCopy,
-  label,
 }: {
   content: string;
   copyKey: string;
   copied: string | null;
   onCopy: (text: string, key: string) => void;
-  label?: string;
 }) {
   return (
     <div
-      className="rounded-xl overflow-hidden border border-coolGray-900"
+      className="relative rounded-xl overflow-hidden border border-coolGray-900"
       style={{ background: "rgba(244,244,245,0.5)" }}
     >
-      {label && (
-        <div
-          className="flex items-center justify-between px-4 py-2 border-b border-coolGray-900"
-          style={{ background: "#ECEDEE" }}
-        >
-          <span className="font-inter text-[10px] font-semibold tracking-widest text-coolGray-500 uppercase">
-            {label}
-          </span>
-          <button
-            type="button"
-            onClick={() => onCopy(content, copyKey)}
-            aria-label="Copy to clipboard"
-            className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded border border-coolGray-800 bg-white font-inter text-[11px] text-coolGray-500 hover:text-parseableBlue-500 hover:border-parseableBlue-500/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3A3A8C]"
-          >
-            {copied === copyKey ? (
-              <>
-                <IconCheck
-                  size={11}
-                  stroke={2}
-                  aria-hidden="true"
-                  className="text-[#059669]"
-                />{" "}
-                Copied
-              </>
-            ) : (
-              <>
-                <IconCopy size={11} stroke={1.5} aria-hidden="true" /> Copy
-              </>
-            )}
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => onCopy(content, copyKey)}
+        aria-label="Copy to clipboard"
+        className="absolute top-3 right-3 inline-flex items-center justify-center w-7 h-7 rounded border border-coolGray-800 bg-white text-coolGray-500 hover:text-parseableBlue-500 hover:border-parseableBlue-500/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3A3A8C]"
+      >
+        {copied === copyKey ? (
+          <IconCheck
+            size={13}
+            stroke={2}
+            aria-hidden="true"
+            className="text-[#059669]"
+          />
+        ) : (
+          <IconCopy size={13} stroke={1.5} aria-hidden="true" />
+        )}
+      </button>
       <pre
-        className="px-5 py-3 text-[13px] leading-6 overflow-x-auto"
+        className="px-5 py-3 pr-12 text-[13px] leading-6 overflow-x-auto"
         style={{
           fontFamily: '"JetBrains Mono", ui-monospace, monospace',
           color: "#27272A",
@@ -279,102 +275,111 @@ function DarkCodeBlock({
   );
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
-  return <p className="font-inter text-xs text-black/40 mb-2">{children}</p>;
+function ClientRow({ clients }: { clients: Client[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      {clients.map((client) => (
+        <div key={client} className="flex items-center gap-1.5 text-black/45">
+          <span className="flex items-center opacity-70">
+            {CLIENT_ICONS[client]}
+          </span>
+          <span className="font-inter text-xs">{client}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ModeToggle({
+  mode,
+  onChange,
+  compact = false,
+}: {
+  mode: ParseableMode;
+  onChange: (mode: ParseableMode) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`inline-flex items-center rounded-lg border border-black/[0.07] bg-black/[0.02] ${compact ? "h-8 p-0.5" : "p-1"}`}
+    >
+      {(["cloud", "self-hosted"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={mode === option}
+          onClick={() => onChange(option)}
+          className={`inline-flex cursor-pointer items-center rounded-md font-inter transition-colors ${
+            compact ? "h-full gap-1 px-2.5 text-xs" : "gap-2 px-5 py-2 text-sm"
+          } ${
+            mode === option
+              ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
+              : "text-black/40 hover:text-black/70"
+          }`}
+        >
+          {option === "cloud" ? (
+            <IconCloud size={compact ? 12 : 15} stroke={1.5} />
+          ) : (
+            <IconServer size={compact ? 12 : 15} stroke={1.5} />
+          )}
+          {option === "cloud" ? "Parseable Cloud" : "Self-hosted"}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function QuickSetup() {
-  const [active, setActive] = useState<Client>("Cursor");
   const [mode, setMode] = useState<ParseableMode>("cloud");
+  const [openGroup, setOpenGroup] = useState<ClientGroup["id"] | null>(
+    GROUPS[0].id,
+  );
   const { copied, copy } = useCopy();
-  const manual = manualConfig(mode)[active];
+  const configs = manualConfig(mode);
 
   return (
     <section className="mt-16 pb-8">
       <div className="max-w-page mx-auto px-4 md:px-0">
-        {/* Mode toggle — shared across every client tab below */}
+        {/* Mode toggle — shared across every block below */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex rounded-lg p-1 border border-black/[0.07] bg-black/[0.02]">
-            {(["cloud", "self-hosted"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={mode === option}
-                onClick={() => setMode(option)}
-                className={`inline-flex cursor-pointer items-center gap-2 px-5 py-2 rounded-md font-inter text-sm transition-colors ${
-                  mode === option
-                    ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
-                    : "text-black/40 hover:text-black/70"
-                }`}
-              >
-                {option === "cloud" ? (
-                  <IconCloud size={15} stroke={1.5} />
-                ) : (
-                  <IconServer size={15} stroke={1.5} />
-                )}
-                {option === "cloud" ? "Parseable Cloud" : "Self-hosted"}
-              </button>
-            ))}
-          </div>
+          <ModeToggle mode={mode} onChange={setMode} />
         </div>
 
-        <div className="rounded-xl overflow-hidden border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.07)]">
-          {/* Tabs */}
-          <div className="flex items-center justify-center border-b border-black/6 px-6 gap-0 overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-0 min-w-max" role="tablist">
-              {CLIENTS.map((client) => (
+        {/* Accordion — one group open at a time, first one open by default */}
+        <div className="max-w-[720px] mx-auto rounded-xl border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.07)] divide-y divide-black/6">
+          {GROUPS.map((group) => {
+            const isInit = group.id === "init";
+            const isOpen = openGroup === group.id;
+            const manual = configs[group.clients[0]];
+            return (
+              <div key={group.id}>
                 <button
-                  key={client}
                   type="button"
-                  role="tab"
-                  aria-selected={active === client}
-                  aria-controls="setup-panel"
-                  onClick={() => setActive(client)}
-                  className={`flex-none inline-flex cursor-pointer items-center gap-1.5 px-4 py-4 font-inter text-[13px] border-b-2 -mb-px transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C] ${
-                    active === client
-                      ? "border-parseableBlue-500 text-parseableBlue-500 font-medium"
-                      : "border-transparent text-[#3F404D] hover:text-[#14151A]"
-                  }`}
+                  onClick={() => setOpenGroup(isOpen ? null : group.id)}
+                  aria-expanded={isOpen}
+                  className="w-full flex cursor-pointer items-center justify-between gap-4 px-6 py-4 text-left"
                 >
-                  <span style={{ opacity: active === client ? 1 : 0.45 }}>
-                    {CLIENT_ICONS[client]}
-                  </span>
-                  {client}
+                  <ClientRow clients={group.clients} />
+                  <IconChevronDown
+                    size={16}
+                    stroke={1.5}
+                    aria-hidden="true"
+                    className={`shrink-0 text-black/40 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab content */}
-          <div id="setup-panel" className="p-6 flex flex-col gap-4 min-w-0">
-            <p className="font-inter text-sm text-black/55 leading-6">
-              {INIT_CLIENTS.has(active)
-                ? `Run interactive setup, select ${active}, then choose Parseable Cloud or Self-hosted. The installer writes the configuration for you.`
-                : "This client is not supported by interactive setup yet. Add the configuration manually."}
-            </p>
-            {INIT_CLIENTS.has(active) && (
-              <div>
-                <SectionLabel>Install and configure</SectionLabel>
-                <DarkCodeBlock
-                  content={INSTALL_COMMAND}
-                  copyKey={`install-${active}`}
-                  copied={copied}
-                  onCopy={copy}
-                />
+                {isOpen && (
+                  <div className="px-6 pb-6">
+                    <DarkCodeBlock
+                      content={isInit ? INSTALL_COMMAND : manual.content}
+                      copyKey={`config-${group.id}`}
+                      copied={copied}
+                      onCopy={copy}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-            {!INIT_CLIENTS.has(active) && (
-              <div>
-                <SectionLabel>Manual configuration · {manual.file}</SectionLabel>
-                <DarkCodeBlock
-                  content={manual.content}
-                  copyKey={`config-${active}`}
-                  copied={copied}
-                  onCopy={copy}
-                />
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -5,7 +5,7 @@ import { Hero } from "../components/landing/Hero";
 import { Nav } from "../components/landing/Nav";
 import { Prompts } from "../components/landing/Prompts";
 import { QuickSetup } from "../components/landing/QuickSetup";
-import { SlackBot } from "../components/landing/SlackBot";
+// import { SlackBot } from "../components/landing/SlackBot";
 import { TwoWays } from "../components/landing/TwoWays";
 
 export function LandingPage() {
@@ -17,7 +17,9 @@ export function LandingPage() {
           <Hero />
           <QuickSetup />
         </div>
-        <SlackBot />
+        {/* Slack bot isn't published yet — re-enable by uncommenting the
+            import above and this line once it's live. */}
+        {/* <SlackBot /> */}
         <TwoWays />
         <Prompts />
         <FeatureGrid />
