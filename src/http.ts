@@ -87,12 +87,12 @@ app.get("/assets/*", async (c) => {
 });
 
 // Vite copies public files to the build root, outside /assets.
-app.get("/favicon.svg", async (c) => {
-  const filePath = join(UI_DIR, "favicon.svg");
+app.get("/favicon.ico", async (c) => {
+  const filePath = join(UI_DIR, "favicon.ico");
   if (!existsSync(filePath)) return c.notFound();
   const buf = await readFile(filePath);
   return new Response(buf, {
-    headers: { "Content-Type": "image/svg+xml" },
+    headers: { "Content-Type": "image/x-icon" },
   });
 });
 
