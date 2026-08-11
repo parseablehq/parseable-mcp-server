@@ -86,6 +86,16 @@ app.get("/assets/*", async (c) => {
   });
 });
 
+// Vite copies public files to the build root, outside /assets.
+app.get("/favicon.svg", async (c) => {
+  const filePath = join(UI_DIR, "favicon.svg");
+  if (!existsSync(filePath)) return c.notFound();
+  const buf = await readFile(filePath);
+  return new Response(buf, {
+    headers: { "Content-Type": "image/svg+xml" },
+  });
+});
+
 app.get("/", serveRoot);
 
 // Streamable HTTP clients probe GET /mcp for an optional standalone SSE stream.
