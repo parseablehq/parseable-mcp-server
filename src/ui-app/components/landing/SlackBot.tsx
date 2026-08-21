@@ -1,5 +1,3 @@
-import { IconArrowUpRight } from "@tabler/icons-react";
-
 export function SlackBot() {
   return (
     <section className="mt-40">
@@ -14,16 +12,15 @@ export function SlackBot() {
               Your entire observability stack, accessible from Slack
             </h2>
             <p className="font-inter text-base text-black/50 leading-7">
-              Ask anything about your infrastructure directly in Slack. Query
-              logs, metrics, traces, and alerts in plain English - the Parseable
-              bot responds with real data from your stack, right in the thread.
+              Query logs, metrics, traces, and alerts without leaving Slack,
+              right in the thread.
             </p>
             <ul className="flex flex-col gap-3">
               {[
                 "Ask questions in plain English, get answers from your observability data",
-                "Works inside any channel - alert threads, incidents, on-call channels",
-                "Integrates with PagerDuty, Grafana, and custom webhooks",
-                "Respects your team's RBAC permissions",
+                "Works in any channel: alert threads, incidents, on-call, DMs",
+                "Plays well with PagerDuty, Grafana, and custom webhooks",
+                "Scoped to your team's existing RBAC permissions",
               ].map((item) => (
                 <li
                   key={item}
@@ -49,154 +46,35 @@ export function SlackBot() {
                 </li>
               ))}
             </ul>
-            <a
-              href="https://www.parseable.com/docs/slack-bot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="self-start inline-flex items-center gap-1.5 font-inter text-sm font-medium text-[#3A3A8C] hover:text-[#2F2F70] hover:underline transition-colors mt-2"
-            >
-              Set up the Slack bot{" "}
-              <IconArrowUpRight size={14} aria-hidden="true" />
-            </a>
+            <div className="flex flex-wrap items-center gap-4 mt-2">
+              <a
+                href="https://slack.com/oauth/v2/authorize?client_id=9215702685972.11441171822325&scope=app_mentions:read,channels:history,channels:read,chat:write,commands,groups:history,im:history,mpim:history,team:read,users:read,users:read.email&user_scope="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt="Add to Slack"
+                  height={40}
+                  width={139}
+                  src="https://platform.slack-edge.com/img/add_to_slack.png"
+                  srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"
+                />
+              </a>
+            </div>
           </div>
 
-          {/* Right: mock Slack thread */}
-          <div className="rounded-xl border border-black/[0.07] bg-white shadow-[0_4px_24px_0_rgba(0,0,0,0.06)] overflow-hidden">
-            {/* Slack header bar */}
-            <div
-              className="flex items-center gap-2 px-4 py-3 border-b border-black/6"
-              style={{ background: "#3F0E40" }}
-            >
-              <div className="flex gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-white/20" />
-                <span className="w-3 h-3 rounded-full bg-white/20" />
-                <span className="w-3 h-3 rounded-full bg-white/20" />
-              </div>
-              <span className="ml-2 font-inter text-xs text-white/60">
-                # alerts-production
-              </span>
-            </div>
-            {/* Messages */}
-            <div className="flex flex-col gap-4 p-5">
-              {/* Alert */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-                  style={{ background: "#FEE2E2" }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M8 2L14.5 13H1.5L8 2Z"
-                      stroke="#DC2626"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M8 6v3M8 11v.5"
-                      stroke="#DC2626"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-inter text-[13px] font-semibold text-[#1D1C1D]">
-                      PagerDuty
-                    </span>
-                    <span className="font-inter text-[11px] text-black/30">
-                      9:14 AM
-                    </span>
-                  </div>
-                  <p className="font-inter text-[13px] text-[#1D1C1D] leading-5">
-                    🔴 <span className="font-semibold">P1 alert:</span> Error
-                    rate on{" "}
-                    <code className="text-xs bg-black/6 px-1 rounded">
-                      api-gateway
-                    </code>{" "}
-                    exceeded 5% for 3 min
-                  </p>
-                </div>
-              </div>
-              {/* User question */}
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#3A3A8C] flex items-center justify-center shrink-0">
-                  <span className="font-inter text-[11px] font-bold text-white">
-                    SK
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-inter text-[13px] font-semibold text-[#1D1C1D]">
-                      Shivam
-                    </span>
-                    <span className="font-inter text-[11px] text-black/30">
-                      9:15 AM
-                    </span>
-                  </div>
-                  <p className="font-inter text-[13px] text-[#1D1C1D] leading-5">
-                    @parseable show me the errors from api-gateway in the last
-                    10 minutes
-                  </p>
-                </div>
-              </div>
-              {/* Bot response */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-black/8"
-                  style={{ background: "#F4F4F5" }}
-                >
-                  <img
-                    src="/assets/CompleteLogo.svg"
-                    alt="Parseable"
-                    width={20}
-                    height={20}
-                    style={{ objectFit: "contain" }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-inter text-[13px] font-semibold text-[#1D1C1D]">
-                      Parseable
-                    </span>
-                    <span className="font-inter text-white bg-[#3A3A8C] px-1.5 py-0.5 rounded text-[10px]">
-                      App
-                    </span>
-                    <span className="font-inter text-[11px] text-black/30">
-                      9:15 AM
-                    </span>
-                  </div>
-                  <div
-                    className="rounded-lg border border-black/[0.07] p-3 mt-1"
-                    style={{ background: "#F9F9FB" }}
-                  >
-                    <p className="font-inter text-[12px] text-black/60 mb-2">
-                      Found{" "}
-                      <span className="font-semibold text-[#DC2626]">
-                        847 errors
-                      </span>{" "}
-                      in the last 10 min - 94% from one route:
-                    </p>
-                    <pre
-                      className="text-[11px] text-[#27272A] overflow-x-auto"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>
-                        POST /v2/ingest → 503 Service Unavailable{"\n"}upstream:
-                        kafka-broker-3 (connection refused){"\n"}first seen:
-                        09:11:42 UTC
-                      </code>
-                    </pre>
-                    <p className="font-inter text-[12px] text-black/50 mt-2">
-                      Likely cause:{" "}
-                      <span className="text-black/70">
-                        kafka-broker-3 is unreachable
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Right: Slack thread preview */}
+          <div className="rounded-xl overflow-hidden mx-auto" style={{ maxWidth: "100%" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/slackbot-preview.png"
+              alt="Parseable Slack bot answering a data ingestion question in a thread"
+              width={480}
+              height={503}
+              className="w-full h-auto"
+            />
           </div>
         </div>
       </div>
