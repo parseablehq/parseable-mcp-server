@@ -11,13 +11,12 @@ import { TwoWays } from "../components/landing/TwoWays";
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="site-shell min-h-screen">
       <Nav />
-      <main>
-        <div style={{ background: "linear-gradient(180deg, rgba(241, 231, 255, 0.8) 0%, #FFFFFF 100%)" }}>
-          <Hero />
-          <QuickSetup />
-        </div>
+      <main className="page-content">
+        <Hero />
+        <QuickSetup />
+        <div className="section-separator" aria-hidden="true" />
         <SlackBot />
         <TwoWays />
         <Prompts />

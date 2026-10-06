@@ -4,15 +4,12 @@ import { Link } from "../ui/Link";
 export function CTABanner() {
   return (
     <div
-      className="mb-4 md:mb-8 w-full shrink-0"
-      style={{
-        background: "linear-gradient(180deg, rgba(241, 231, 255, 0.8) 0%, #FFFFFF 100%)",
-      }}
+      className="section-rule w-full shrink-0 bg-[#fafafa]"
     >
-      <div className="flex flex-col items-center justify-center py-24 md:py-32 px-4">
+      <div className="flex flex-col items-center justify-center py-24 px-6">
         <div className="flex flex-col items-center gap-6 text-center max-w-3xl">
-          <h2 className="font-sans text-[3.5rem] font-medium leading-[107%] tracking-tight text-[#2F2F37]">
-            Your observability data deserves better than a dashboard
+          <h2 className="section-heading text-[40px] leading-[48px] tracking-[-0.03em]">
+            Your Observability data <span className="text-[#1f40ed]">deserves better than a dashboard</span>
           </h2>
           <p className="font-inter text-base font-normal text-black/60 leading-7 max-w-xl">
             Connect Parseable to Claude, Cursor, or any MCP-compatible agent and investigate incidents across logs, metrics, traces, and alerts - in natural language, without switching context.

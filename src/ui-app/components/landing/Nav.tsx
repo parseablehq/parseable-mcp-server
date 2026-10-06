@@ -3,21 +3,18 @@ import {
   IconArrowRight,
   IconBrandGithub,
   IconBrandSlack,
-  IconCalendarEvent,
   IconChartLine,
   IconChevronDown,
   IconCode,
-  IconCoin,
   IconCpu,
   IconLogs,
   IconMenu2,
   IconMessage,
   IconPlugConnected,
   IconRoute,
-  IconRocket,
+  IconShieldCheck,
   IconSparkles,
   IconSum,
-  IconTelescope,
   IconX,
   type TablerIcon,
 } from "@tabler/icons-react";
@@ -34,81 +31,74 @@ type ProductItem = {
   Icon: TablerIcon;
 };
 
-const PRODUCT_SECTIONS: { title: string; items: ProductItem[] }[] = [
-  {
-    title: "AI Native",
-    items: [
-      { label: "Ask questions", href: `${SITE}/docs/user-guide/ai-native/keystone`, description: "Natural language interface", Icon: IconMessage },
-      { label: "Proactive alerting", href: `${SITE}/docs/user-guide/alerting/forecasting`, description: "Time series forecasting alerts", Icon: IconSparkles },
-      { label: "Summary on demand", href: `${SITE}/docs/user-guide/ai-native/summary`, description: "Real time insights", Icon: IconSum },
-    ],
-  },
-  {
-    title: "Product",
-    items: [
-      { label: "Logs", href: `${SITE}/solutions/log-monitoring`, description: "Centralized management at scale", Icon: IconLogs },
-      { label: "Metrics", href: `${SITE}/solutions/metrics-monitoring`, description: "High cardinality made simple", Icon: IconChartLine },
-      { label: "Traces", href: `${SITE}/solutions/traces`, description: "End to end distributed tracing", Icon: IconRoute },
-      { label: "Alerts", href: `${SITE}/docs/user-guide/alerting`, description: "Get notified when issues arise", Icon: IconBell },
-      { label: "Agent observability", href: `${SITE}/docs/user-guide/agent-observability`, description: "Observe your AI Agents", Icon: IconCpu },
-      { label: "SQL Editor", href: `${SITE}/docs/user-guide/sql-editor`, description: "Query telemetry data with SQL", Icon: IconCode },
-    ],
-  },
-  {
-    title: "Platform",
-    items: [
-      { label: "OTel first", href: `${SITE}/docs/ingest-data/otel`, description: "OTel native ingestion and analysis", Icon: IconTelescope },
-      { label: "Integration", href: `${SITE}/docs/integrations`, description: "100s of integrations supported", Icon: IconPlugConnected },
-      { label: "Predictable cost", href: `${SITE}/pricing`, description: "Pay only for what you use", Icon: IconCoin },
-    ],
-  },
+const CAPABILITY_COLUMNS: ProductItem[][] = [
+  [
+    { label: "Agent observability", description: "Deep insights into agents", href: "/docs/user-guide/agent-observability", Icon: IconCpu },
+    { label: "APM", description: "Performance monitoring", href: "/docs/user-guide/apm", Icon: IconChartLine },
+    { label: "Logs", description: "Log analysis", href: "/solutions/log-monitoring", Icon: IconLogs },
+    { label: "Metrics", description: "Timeseries data analysis", href: "/solutions/metrics-monitoring", Icon: IconChartLine },
+    { label: "Traces", description: "Distributed tracing", href: "/solutions/traces", Icon: IconRoute },
+  ],
+  [
+    { label: "Ask questions", description: "Query in natural language", href: "/docs/user-guide/ai-native/keystone", Icon: IconMessage },
+    { label: "Summary on demand", description: "Instant data summaries", href: "/docs/user-guide/ai-native/summary", Icon: IconSum },
+    { label: "Anomaly detection", description: "ML anomaly detection", href: "/docs/user-guide/alerting", Icon: IconBell },
+    { label: "Proactive learning", description: "Learn from patterns", href: "/docs/user-guide/alerting/forecasting", Icon: IconSparkles },
+    { label: "SQL & PromQL Editor", description: "Raw query execution", href: "/docs/user-guide/sql-editor", Icon: IconCode },
+  ],
+];
+
+const CONNECTORS: ProductItem[] = [
+  { label: "MCP", description: "Connect any LLM", href: "https://mcp.parseable.com", Icon: IconPlugConnected },
+  { label: "pb", description: "CLI for agents & humans", href: "/docs/pb-cli", Icon: IconCode },
+  { label: "Grafana", description: "Connect to Grafana", href: "/docs/integrations/visualization/grafana", Icon: IconChartLine },
+  { label: "AI providers", description: "Ingest from agents", href: "/docs/ingest-data/ai-agents", Icon: IconCpu },
+  { label: "Kafka & Redpanda", description: "Ingest from topics", href: "/docs/ingest-data/streaming/kafka", Icon: IconRoute },
+];
+
+const RESOURCES: ProductItem[] = [
+  { label: "Blog", description: "Read our latest articles", href: "/blog", Icon: IconLogs },
+  { label: "About", description: "Learn more about us", href: "/about", Icon: IconMessage },
+  { label: "Trust center", description: "Privacy and security practices", href: "https://trust.parseable.com/", Icon: IconShieldCheck },
 ];
 
 const baseLink =
-  "inline-flex w-max items-center justify-center gap-2.5 rounded-lg px-4 py-2 font-inter text-sm font-normal leading-normal text-black/80 transition-colors hover:bg-[rgba(241,231,255,0.40)] hover:text-black hover:backdrop-blur-[4px] focus:outline-none";
+  "inline-flex w-max items-center justify-center gap-1 font-inter text-base font-medium leading-normal text-[#6d6d6d] transition-colors hover:text-[#1b1b1b] focus:outline-none focus-visible:text-[#1b1b1b]";
+
+function productHref(href: string) {
+  return href.startsWith("http") ? href : `${SITE}${href}`;
+}
+
+function ProductColumn({ title, items }: { title?: string; items: ProductItem[] }) {
+  return (
+    <div className="flex w-47 shrink-0 flex-col gap-4">
+      {title ? <p className="text-sm font-medium text-[#1f40ed]">{title}</p> : <div className="h-[17px]" />}
+      <div className="flex flex-col gap-1">
+        {items.map(({ label, description, href, Icon }) => (
+          <Link key={label} href={productHref(href)} className="flex w-47 items-center gap-2 overflow-hidden rounded-md p-2 hover:bg-[#fafafa]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#e7e7e7] bg-white"><span className="flex size-8 items-center justify-center rounded border border-[#e7e7e7]"><Icon size={16} stroke={1.5} className="text-[#1f40ed]" /></span></span>
+            <span className="min-w-0 leading-normal"><span className="block whitespace-nowrap text-sm text-[#1b1b1b]">{label}</span><span className="mt-1 block whitespace-nowrap text-xs text-[#888]">{description}</span></span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ProductMenu({ mobile = false }: { mobile?: boolean }) {
+  if (mobile) return <div className="grid gap-5 px-4 pb-5 sm:grid-cols-2">{CAPABILITY_COLUMNS.map((items, index) => <ProductColumn key={index} title={index === 0 ? "Capabilities" : undefined} items={items} />)}<ProductColumn title="Connectors" items={CONNECTORS} /></div>;
   return (
-    <div
-      className={
-        mobile
-          ? "flex flex-col gap-5 px-4 pb-5"
-          : "flex w-212 flex-col gap-10 rounded-xl bg-white p-6 shadow-lg"
-      }
-    >
-      {PRODUCT_SECTIONS.map((section) => (
-        <div key={section.title} className="flex flex-col gap-4">
-          <p className="text-sm font-medium leading-5 text-[#5E5F6E]">{section.title}</p>
-          <div className={mobile ? "flex flex-col gap-4" : "grid grid-cols-3 gap-x-3 gap-y-6"}>
-            {section.items.map(({ label, href, description, Icon }) => (
-              <Link key={href} href={href} className="group flex items-start gap-3 rounded-lg">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F1E7FF66] text-[#3A3A8C] group-hover:bg-[#3A3A8C] group-hover:text-white">
-                  <Icon size={20} stroke={1.5} aria-hidden="true" />
-                </span>
-                <span className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1">
-                    <span className="text-sm font-medium leading-5 text-[#14151F] group-hover:text-[#3A3A8C]">{label}</span>
-                    <IconArrowRight size={16} className="-translate-x-2 text-[#3A3A8C] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
-                  </span>
-                  <span className="text-xs leading-5 text-[#5E5F6E] group-hover:text-black">{description}</span>
-                </span>
-              </Link>
-            ))}
-          </div>
+    <div className="w-[1377px] max-w-[calc(100vw-48px)] -translate-x-24 translate-y-3.5 overflow-hidden rounded-b-[20px] border border-[#e7e7e7] bg-[#fafafa] p-1.5">
+      <div className="overflow-hidden rounded-b-[20px] border border-[#e7e7e7] bg-white">
+        <div className="flex items-start justify-between p-6">
+          <section className="flex shrink-0 gap-9">{CAPABILITY_COLUMNS.map((items, index) => <ProductColumn key={index} title={index === 0 ? "Capabilities" : undefined} items={items} />)}</section>
+          <div className="flex w-47 shrink-0 flex-col gap-4"><ProductColumn title="Connectors" items={CONNECTORS} /><Link href={`${SITE}/docs/integrations`} className="flex items-center gap-1 text-sm text-[#1f40ed]">View all integrations <IconArrowRight size={18} stroke={1} /></Link></div>
+          <aside className="flex w-[322px] shrink-0 flex-col gap-3">
+            <div className="flex h-45 flex-col justify-between rounded-xl bg-[#1f40ed] p-4 text-white"><div><p className="text-lg">Download Enterprise Trial</p><p className="mt-2 text-[13px] opacity-80">Download the latest Enterprise edition of Parseable for a full-featured trial.</p></div><Link href={`${SITE}/download`} className="w-fit rounded-lg bg-[#fafafa] px-3 py-2 text-sm font-medium text-black">Download</Link></div>
+            <Link href="https://www.youtube.com/live/Tc3T-Gj4QK8?si=gpesCwcHzQNcFQ7A" target="_blank" rel="noreferrer" className="group relative h-[157px] overflow-hidden rounded-xl border border-[#e7e7e7] bg-[#1b1b1b]"><img src={`${SITE}/images/product-menu/parseable-demo-thumbnail.jpg`} alt="Latest in Parseable" className="size-full object-cover transition-transform group-hover:scale-[1.03]" /><span className="absolute inset-0 bg-linear-to-t from-black/65 to-transparent" /><span className="absolute inset-x-4 bottom-3 text-center text-sm font-medium text-white">Latest in Parseable</span></Link>
+          </aside>
         </div>
-      ))}
-      {!mobile && (
-        <div className="flex w-full items-center gap-4 pt-2">
-          <Link href="https://app.parseable.com/" target="_blank" rel="noopener noreferrer" className="group flex w-1/2 cursor-pointer items-center gap-3 rounded-lg bg-[#F1E7FF66] px-4 py-6 hover:bg-[#3A3A8C]">
-            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white"><IconRocket size={20} stroke={1.5} className="text-[#3A3A8C]" /></span>
-            <span className="flex flex-col gap-1"><span className="text-sm font-medium leading-5 text-[#2E2E70] group-hover:text-white">Start for free</span><span className="text-xs leading-5 text-[#5E5F6E] group-hover:text-white">Start your 14 days fully featured trial</span></span>
-          </Link>
-          <Link href="https://cal.com/parseable/enterprise" target="_blank" rel="noopener noreferrer" className="group flex w-1/2 cursor-pointer items-center gap-3 rounded-lg bg-[#F1E7FF66] px-4 py-6 hover:bg-[#3A3A8C]">
-            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-white"><IconCalendarEvent size={20} stroke={1.5} className="text-[#3A3A8C]" /></span>
-            <span className="flex flex-col gap-1"><span className="text-sm font-medium leading-5 text-black group-hover:text-white">Book a demo</span><span className="text-xs leading-5 text-black group-hover:text-white">Talk to our team of observability experts</span></span>
-          </Link>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -131,43 +121,50 @@ export function Nav() {
   }, [mobileOpen]);
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 h-16 transition-all duration-200 ${scrolled ? "border-b border-black/5 bg-white/40 backdrop-blur-sm" : "border-b border-transparent bg-transparent"}`} style={{ borderTop: "0.1px solid transparent" }}>
-      <div className="mx-auto grid h-full w-full max-w-425 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
-        <Link href={SITE} aria-label="Parseable home" className="inline-flex justify-self-start">
-          <Image src="/assets/CompleteLogo.svg" alt="Parseable" width={180} height={100} priority className="w-35 md:w-45" />
+    <header className={`site-header h-[72px] border-b border-[#e7e7e7] bg-white transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
+      <div className="mx-auto flex h-full w-full max-w-[1377px] items-center justify-between px-6 lg:px-0">
+        <div className="flex items-center gap-16">
+        <Link href={SITE} aria-label="Parseable home" className="block size-8 overflow-hidden">
+          <Image src="/assets/CompleteLogo.svg" alt="" width={206} height={32} priority className="h-8 w-[206px] max-w-none" />
         </Link>
 
-        <nav className="hidden items-center space-x-1 lg:flex" aria-label="Main navigation">
-          <Link href={SITE} className={baseLink}>Home</Link>
-          <div className="group/product relative">
+        <nav className="relative hidden items-center gap-6 lg:flex" aria-label="Main navigation">
+          <Link href={SITE} className={`${baseLink} text-[#1b1b1b]`}>Home</Link>
+          <div className="group/product">
             <button type="button" className={`${baseLink} flex cursor-pointer items-center gap-1`}>
               Product <IconChevronDown size={15} className="transition-transform group-hover/product:rotate-180" aria-hidden="true" />
             </button>
-            <div className="invisible absolute left-1/2 top-full -translate-x-1/2 pt-1.5 opacity-0 transition-all group-hover/product:visible group-hover/product:opacity-100 group-focus-within/product:visible group-focus-within/product:opacity-100">
+            <div className="invisible absolute left-0 top-full pt-1.5 opacity-0 transition-all group-hover/product:visible group-hover/product:opacity-100 group-focus-within/product:visible group-focus-within/product:opacity-100">
               <ProductMenu />
             </div>
           </div>
-          <Link href={`${SITE}/pricing`} className={baseLink}>Pricing</Link>
-          <Link href={`${SITE}/docs`} className={baseLink}>Docs</Link>
-          <div className="group/resources relative">
+          <div className="group/resources">
             <button type="button" className={`${baseLink} flex cursor-pointer items-center gap-1`}>
               Resources <IconChevronDown size={15} className="transition-transform group-hover/resources:rotate-180" aria-hidden="true" />
             </button>
             <div className="invisible absolute left-0 top-full pt-2 opacity-0 transition-all group-hover/resources:visible group-hover/resources:opacity-100 group-focus-within/resources:visible group-focus-within/resources:opacity-100">
-              <div className="w-36 rounded-xl bg-white p-2 shadow-lg ring-1 ring-black/5">
-                <Link href={`${SITE}/about`} className="block rounded-lg p-2 text-sm hover:bg-[#F1E7FF66]">About us</Link>
-                <Link href={`${SITE}/blog`} className="block rounded-lg p-2 text-sm hover:bg-[#F1E7FF66]">Blog</Link>
-                <Link href="https://trust.parseable.com" className="block rounded-lg p-2 text-sm hover:bg-[#F1E7FF66]">Trust center</Link>
+              <div className="translate-x-15 translate-y-3.5 overflow-hidden rounded-b-[20px] border border-[#e7e7e7] bg-[#fafafa] p-1.5">
+                <div className="overflow-hidden rounded-b-[20px] border border-[#e7e7e7] bg-white p-2">
+                  {RESOURCES.map(({ label, description, href, Icon }) => (
+                    <Link key={label} href={productHref(href)} target={href.startsWith("http") ? "_blank" : undefined} rel={href.startsWith("http") ? "noreferrer" : undefined} className="flex items-center gap-2 rounded-md p-2 hover:bg-[#fafafa]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#e7e7e7] bg-white"><span className="flex size-8 items-center justify-center rounded border border-[#e7e7e7]"><Icon size={16} stroke={1.5} className="text-[#1f40ed]" /></span></span>
+                      <span className="min-w-0 flex-1 leading-normal"><span className="block text-sm text-[#1b1b1b]">{label}</span><span className="mt-1 block whitespace-nowrap text-xs text-[#888]">{description}</span></span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
+          <Link href={`${SITE}/docs`} className={baseLink}>Docs</Link>
+          <Link href={`${SITE}/about`} className={baseLink}>About</Link>
+          <Link href={`${SITE}/pricing`} className={baseLink}>Pricing</Link>
         </nav>
+        </div>
 
-        <div className="hidden items-center justify-self-end gap-1 lg:flex">
-          <Link href="https://www.github.com/parseablehq" target="_blank" rel="noopener noreferrer" aria-label="Parseable on GitHub" className="flex h-10 w-10 items-center justify-center rounded-lg text-[#3A3A8C] hover:bg-[#3A3A8C]/8"><IconBrandGithub size={20} stroke={1.5} /></Link>
-          <Link href="https://logg.ing/community" target="_blank" rel="noopener noreferrer" aria-label="Parseable Slack community" className="flex h-10 w-10 items-center justify-center rounded-lg text-[#3A3A8C] hover:bg-[#3A3A8C]/8"><IconBrandSlack size={20} stroke={1.5} /></Link>
-          <span className="mx-1 h-5 w-px bg-black/10" />
-          <Link href="https://app.parseable.com/" target="_blank" rel="noopener noreferrer" className="flex h-10 items-center rounded-lg bg-[#3A3A8C] px-6 text-sm font-medium text-white shadow-sm hover:bg-[#2F2F70]">Start for free</Link>
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link href="https://www.github.com/parseablehq" target="_blank" rel="noopener noreferrer" aria-label="Parseable on GitHub" className="flex size-9 items-center justify-center rounded-md text-[#1b1b1b] hover:bg-[#fafafa] hover:text-[#1f40ed]"><IconBrandGithub size={24} stroke={1} /></Link>
+          <Link href="https://logg.ing/community" target="_blank" rel="noopener noreferrer" aria-label="Parseable Slack community" className="flex size-9 items-center justify-center rounded-md text-[#1b1b1b] hover:bg-[#fafafa] hover:text-[#1f40ed]"><IconBrandSlack size={24} stroke={1} /></Link>
+          <Link href="https://app.parseable.com/" target="_blank" rel="noopener noreferrer" className="ml-1 flex h-9 items-center rounded-lg bg-[#3d3d3d] px-3 text-sm font-medium text-white hover:bg-[#1b1b1b]">Start for free</Link>
         </div>
 
         <button type="button" onClick={() => setMobileOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center justify-self-end rounded-lg text-[#3A3A8C] lg:hidden" aria-label="Open menu"><IconMenu2 size={24} /></button>

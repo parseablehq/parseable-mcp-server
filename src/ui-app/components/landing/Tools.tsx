@@ -75,28 +75,24 @@ function ToolListItem({
 }) {
   const isCopied = copied === name;
   return (
-    <li className="py-1">
+    <li>
       <button
         type="button"
         onClick={() => onCopy(name, name)}
         aria-label={`Copy ${name}`}
-        className="group flex w-full cursor-pointer items-center gap-2.5 rounded-md border border-black/[0.06] px-2 py-1.5 text-left hover:border-black/[0.14] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C]"
-        style={{ background: "#FAFAFA" }}
+        className="group flex w-full cursor-pointer items-start gap-2.5 rounded-xl border border-[#e7e7e7] bg-white p-3 text-left transition-colors hover:border-[#b0b0b0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed]"
       >
-        <span className="w-4 shrink-0 font-inter text-xs text-black/30 tabular-nums">
+        <span className="shrink-0 text-sm leading-[1.5] text-[#24292e] tabular-nums">
           {index}.
         </span>
-        <code
-          className="flex-1 font-mono text-[12px] text-[#3A3A8C]"
-          style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace' }}
-        >
+        <span className="flex-1 text-sm leading-[1.5] text-[#24292e]">
           {name}
-        </code>
-        <span className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        </span>
+        <span className={`size-4 shrink-0 transition-opacity ${index === 1 || isCopied ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
           {isCopied ? (
-            <IconCheck size={13} stroke={2} aria-hidden="true" className="text-[#059669]" />
+            <IconCheck size={16} stroke={2} aria-hidden="true" className="text-[#1f40ed]" />
           ) : (
-            <IconCopy size={13} stroke={1.5} aria-hidden="true" className="text-black/30" />
+            <IconCopy size={16} stroke={1.5} aria-hidden="true" className="text-[#24292e]" />
           )}
         </span>
       </button>
@@ -107,14 +103,11 @@ function ToolListItem({
 function ToolGroupCard({ group, tools }: ToolGroup) {
   const { copied, copy } = useCopy();
   return (
-    <div className="rounded-xl border border-black/[0.06] bg-white p-5 hover:border-black/10 transition-all">
-      <h3
-        className="font-sans text-sm font-medium text-[#14151A] mb-2"
-        style={{ fontFamily: '"Open Sans", sans-serif' }}
-      >
+    <div className="flex w-full flex-col gap-3 rounded-2xl bg-[#fafafa] p-3">
+      <h3 className="text-base font-normal leading-[1.53] text-[#1b1b1b]">
         {group}
       </h3>
-      <ol className="flex flex-col">
+      <ol className="flex flex-col gap-1.5">
         {tools.map((tool, i) => (
           <ToolListItem
             key={tool}
@@ -134,40 +127,35 @@ export function Tools() {
   const isMarkdownCopied = copied === "tools-markdown";
 
   return (
-    <section className="mt-40 w-full">
-      <div className="max-w-page mx-auto px-4 md:px-0">
-        <div className="flex flex-col items-center text-center gap-4 mb-14 max-w-2xl mx-auto">
-          <h2
-            className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
-            style={{ fontFamily: '"Open Sans", sans-serif' }}
-          >
-            The full Parseable toolkit,
+    <section className="section-rule w-full py-32">
+      <div className="mx-auto flex max-w-page flex-col items-center gap-[76px] px-6 md:px-0">
+        <div className="flex w-full max-w-[501px] flex-col items-center gap-[15px] text-center">
+          <h2 className="w-full font-sans text-[32px] font-light leading-normal text-[#3d3d3d]">
+            The full <span className="text-[#1f40ed]">Parseable toolkit,</span>
             <br />
             one call away
           </h2>
-          <p className="font-inter text-base text-black/50 leading-7">
+          <p className="text-base leading-normal text-[#6d6d6d]">
             {TOOL_COUNT} tools across datasets, queries, alerts, and access
             control. Your agent gets exactly the access you do. Nothing more,
             nothing less.
           </p>
-          <button
-            type="button"
-            onClick={() => copy(TOOLS_MARKDOWN, "tools-markdown")}
-            className="inline-flex items-center gap-1.5 rounded-md border border-black/[0.08] px-3 py-1.5 font-inter text-xs text-[#5E5F6E] hover:text-[#14151A] hover:border-black/20 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C]"
-          >
-            {isMarkdownCopied ? (
-              <IconCheck size={13} stroke={2} aria-hidden="true" className="text-[#059669]" />
-            ) : (
-              <IconCopy size={13} stroke={1.5} aria-hidden="true" />
-            )}
-            {isMarkdownCopied ? "Copied" : "Copy as markdown"}
-          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {TOOL_GROUPS.map((g) => (
-            <ToolGroupCard key={g.group} group={g.group} tools={g.tools} />
-          ))}
+        <div className="flex w-full flex-col items-center gap-7">
+          <button type="button" onClick={() => copy(TOOLS_MARKDOWN, "tools-markdown")} className="inline-flex items-center gap-2.5 rounded-lg border border-[#d1d1d1] bg-white px-3 py-2 text-sm font-medium text-[#1b1b1b] transition-colors hover:bg-[#fafafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed]">
+            {isMarkdownCopied ? (
+              <><span>Copied</span><IconCheck size={16} stroke={2} aria-hidden="true" className="text-[#1f40ed]" /></>
+            ) : <><span>Copy as Markdown</span><IconCopy size={16} stroke={1.5} aria-hidden="true" /></>}
+          </button>
+
+          <div className="grid w-full grid-cols-1 items-start gap-5 md:grid-cols-3">
+            {[[TOOL_GROUPS[0], TOOL_GROUPS[1]], [TOOL_GROUPS[2], TOOL_GROUPS[5]], [TOOL_GROUPS[4], TOOL_GROUPS[3]]].map((column, index) => (
+              <div key={index} className="flex min-w-0 flex-col gap-5">
+                {column.map((group) => <ToolGroupCard key={group.group} group={group.group} tools={group.tools} />)}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
