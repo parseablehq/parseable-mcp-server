@@ -6,7 +6,7 @@ type CopyKey = string;
 function useCopy() {
   const [copied, setCopied] = useState<CopyKey | null>(null);
   const copy = useCallback((text: string, key: CopyKey) => {
-    navigator.clipboard.writeText(text).catch(() => {});
+    navigator.clipboard.writeText(text).catch(() => { });
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   }, []);
@@ -86,83 +86,50 @@ const PROMPT_CATEGORIES: PromptCategory[] = [
 ];
 
 export function Prompts() {
-  const [category, setCategory] = useState<PromptCategory>("All");
+  const [category, setCategory] = useState<PromptCategory>("Discover");
   const { copied, copy } = useCopy();
 
-  const filtered =
-    category === "All"
-      ? PROMPTS
-      : PROMPTS.filter((p) => p.category === category);
+  const featured = [PROMPTS[0], PROMPTS[1], PROMPTS[2], PROMPTS[14], PROMPTS[3], PROMPTS[3], PROMPTS[0], PROMPTS[1]];
+  const filtered = category === "Discover" ? featured : category === "All" ? PROMPTS : PROMPTS.filter((p) => p.category === category);
 
   return (
-    <section className="mt-48">
-      <div className="max-w-page mx-auto px-4 md:px-0">
-        <div className="flex flex-col items-center text-center gap-4 mb-10">
-          <h2
-            className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
-            style={{ fontFamily: '"Open Sans", sans-serif' }}
-          >
+    <section className="section-rule py-[76px] md:py-32">
+      <div className="mx-auto flex max-w-page flex-col items-center gap-19 px-4 md:px-0">
+        <div className="flex w-full max-w-125.25 flex-col items-center gap-3.75 text-center">
+          <h2 className="w-full font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
             Copy, paste, and ask
           </h2>
-          <p className="max-w-lg font-inter text-base text-black/60 leading-7">
+          <p className="text-[15px] leading-normal text-[#6d6d6d] md:text-base">
             These prompts work out of the box with any MCP-compatible AI client
             connected to Parseable.
           </p>
         </div>
 
-        {/* Category filter */}
-        <div
-          className="flex flex-wrap justify-center gap-2 mb-8"
-          role="group"
-          aria-label="Filter prompts by category"
-        >
-          {PROMPT_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setCategory(cat)}
-              aria-pressed={category === cat}
-              className={`px-3.5 py-1.5 rounded-[8px] font-inter text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C] ${
-                category === cat
-                  ? "bg-[#3A3A8C] text-white"
-                  : "border border-black/[0.08] text-[#5E5F6E] hover:text-[#14151A] hover:border-black/20"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((prompt, i) => (
-            <div
-              key={`${prompt.category}-${i}`}
-              className="group relative flex items-start justify-between gap-3 p-4 rounded-xl border border-black/[0.06] hover:border-black/[0.14] transition-colors"
-              style={{ background: "#FAFAFA", height: "74px" }}
-            >
-              <p className="font-inter text-sm text-[#14151A] leading-5 pr-2">
-                {prompt.text}
-              </p>
+        <div className="flex w-full flex-col items-center gap-7">
+          <div className="mobile-tab-scroller flex w-full items-center justify-start gap-2 overflow-x-auto px-1 py-1 md:w-auto md:flex-wrap md:justify-center md:overflow-visible md:px-0" role="group" aria-label="Filter prompts by category">
+            {PROMPT_CATEGORIES.map((cat) => (
               <button
+                key={cat}
                 type="button"
-                onClick={() => copy(prompt.text, `prompt-${i}-${category}`)}
-                aria-label={`Copy prompt: ${prompt.text}`}
-                className="shrink-0 mt-0.5 text-black/30 hover:text-[#3A3A8C] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A3A8C] rounded"
+                onClick={() => setCategory(cat)}
+                aria-pressed={category === cat}
+                className={`flex h-9.25 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-2.5 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed] md:px-4 md:text-sm ${category === cat ? "rounded-lg border border-[#3d3d3d] bg-[#3d3d3d] text-[#fafafa] shadow-[0_0_0_2px_white,0_0_0_3px_#3d3d3d]" : "rounded-md border border-[#e7e7e7] bg-[#fafafa] text-[#3d3d3d] hover:border-[#b0b0b0]"}`}
               >
-                {copied === `prompt-${i}-${category}` ? (
-                  <IconCheck
-                    size={15}
-                    stroke={2}
-                    aria-hidden="true"
-                    className="text-[#059669]"
-                  />
-                ) : (
-                  <IconCopy size={15} stroke={1.5} aria-hidden="true" />
-                )}
+                {cat}
               </button>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="grid w-full grid-cols-1 gap-4 px-0 sm:grid-cols-2 md:px-0 lg:grid-cols-3">
+            {filtered.map((prompt, i) => (
+              <div key={`${prompt.text}-${i}-${category}`} className="flex min-h-16.5 items-start gap-2.5 rounded-xl border border-[#e7e7e7] bg-[#fafafa] p-3">
+                <p className="min-w-0 flex-1 text-sm leading-normal text-[#24292e]">{prompt.text}{prompt.text.endsWith("?") || prompt.text.endsWith(".") ? "" : "."}</p>
+                <button type="button" onClick={() => copy(prompt.text, `prompt-${i}-${category}`)} aria-label={`Copy prompt: ${prompt.text}`} className="flex size-4 shrink-0 items-center justify-center rounded text-[#24292e] transition-colors hover:text-[#1f40ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed]">
+                  {copied === `prompt-${i}-${category}` ? <IconCheck size={16} stroke={2} className="text-[#1f40ed]" aria-hidden="true" /> : <IconCopy size={16} stroke={1.5} aria-hidden="true" />}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

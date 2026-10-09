@@ -1,105 +1,72 @@
 import {
-  IconBell,
-  IconBolt,
-  IconDatabase,
-  IconEye,
-  IconSearch,
-  IconShieldCheck,
-} from "@tabler/icons-react";
+  Alert01Icon,
+  BoltIcon,
+  ChatSearch01Icon,
+  EyeIcon,
+  Search01Icon,
+  ShieldCheckIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 const FEATURES = [
   {
-    icon: <IconSearch size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#3A3A8C",
-    iconBg: "rgba(58,58,140,0.08)",
+    icon: ChatSearch01Icon,
+    mobileOrder: "order-1",
     title: "Natural language querying",
-    desc: "Ask questions in plain English. The server translates them to SQL and runs against your Parseable datasets.",
+    description: "Ask questions in plain English. The server translates them to SQL and runs against your Parseable datasets.",
   },
   {
-    icon: <IconBolt size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#D97706",
-    iconBg: "rgba(217,119,6,0.08)",
+    icon: Search01Icon,
+    mobileOrder: "order-2",
     title: "Sub-second search",
-    desc: "Full-fidelity queries across millions of log events, powered by Parseable's columnar storage engine.",
+    description: "Full-fidelity queries across millions of log events, powered by Parseable's columnar storage engine.",
   },
   {
-    icon: <IconDatabase size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#0891B2",
-    iconBg: "rgba(8,145,178,0.08)",
+    icon: BoltIcon,
+    mobileOrder: "order-6",
     title: "Full tool surface",
-    desc: "Your Parseable instance publishes its live OSS, Enterprise, or Cloud tool catalog.",
+    description: "Your Parseable instance publishes its live OSS, Enterprise, or Cloud tool catalog.",
   },
   {
-    icon: <IconShieldCheck size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#059669",
-    iconBg: "rgba(5,150,105,0.08)",
+    icon: ShieldCheckIcon,
+    mobileOrder: "order-3",
     title: "Direct API key authentication",
-    desc: "Connects to your Parseable instance using its URL and API key headers. No OAuth flow or separate account required.",
+    description: "Connects to your Parseable instance using its URL and API key headers. No OAuth flow or separate account required.",
   },
   {
-    icon: <IconEye size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#7C3AED",
-    iconBg: "rgba(124,58,237,0.08)",
+    icon: EyeIcon,
+    mobileOrder: "order-4",
     title: "Dashboard-free investigation",
-    desc: "Debug production incidents, find anomalies, and correlate signals without switching context.",
+    description: "Debug production incidents, find anomalies, and correlate signals without switching context.",
   },
   {
-    icon: <IconBell size={20} stroke={1.5} aria-hidden="true" />,
-    iconColor: "#DC2626",
-    iconBg: "rgba(220,38,38,0.08)",
+    icon: Alert01Icon,
+    mobileOrder: "order-5",
     title: "Safety rails built in",
-    desc: "Parseable validates tool input and enforces RBAC at execution time.",
+    description: "Parseable validates tool input and enforces RBAC at execution time.",
   },
 ];
 
 export function FeatureGrid() {
   return (
-    <section
-      className="mt-40 w-full"
-      style={{
-        background:
-          "linear-gradient(180deg, #FFFFFF 0%, rgba(241, 231, 255, 0.8) 100%)",
-      }}
-    >
-      <div className="max-w-page mx-auto px-4 md:px-0">
-        <div className="flex flex-col items-center text-center gap-4 mb-14">
-          <h2
-            className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
-            style={{ fontFamily: '"Open Sans", sans-serif' }}
-          >
-            Everything you need to investigate faster
-          </h2>
-        </div>
+    <section className="section-rule flex w-full flex-col items-center gap-8 py-[76px] md:gap-[76px] md:py-32">
+      <div className="flex w-full max-w-[501px] flex-col items-center px-6 text-center">
+        <h2 className="w-full max-w-[391px] font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
+          Everything that you need to <span className="text-[#1f40ed]">investigate</span>
+        </h2>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {FEATURES.map(({ icon, iconColor, iconBg, title, desc }) => (
-            <div
-              key={title}
-              className="flex flex-col gap-4 p-7 rounded-xl border border-black/[0.06] bg-white hover:border-black/10 transition-all"
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ background: iconBg, color: iconColor }}
-              >
-                {icon}
-              </div>
-              <div className="flex flex-col gap-2">
-                <h3
-                  className="font-sans text-base font-medium text-[#14151A]"
-                  style={{ fontFamily: '"Open Sans", sans-serif' }}
-                >
-                  {title}
-                </h3>
-                <p className="font-inter text-sm text-black/60 leading-6">
-                  {desc}
-                </p>
-              </div>
+      <div className="grid w-[calc(100%_-_32px)] grid-cols-1 border-l border-t border-[#e7e7e7] sm:grid-cols-2 md:w-full lg:grid-cols-3">
+        {FEATURES.map(({ icon, title, description, mobileOrder }) => (
+          <article key={title} className={`${mobileOrder} flex min-w-0 flex-col items-start gap-5 overflow-hidden border-b border-r border-[#e7e7e7] bg-[#fafafa] px-5 py-5 sm:order-none md:px-8 md:py-11`}>
+            <div className="flex items-center gap-2">
+              <HugeiconsIcon icon={icon} size={24} strokeWidth={1.5} className="shrink-0 text-[#1f40ed]" aria-hidden="true" />
+              <h3 className="text-base font-semibold leading-6 text-[#1f40ed]">{title}</h3>
             </div>
-          ))}
-        </div>
+            <p className="text-base leading-6 text-[#3d3d3d]">{description}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
-
-// ─── Prompts ──────────────────────────────────────────────────────────────────

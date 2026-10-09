@@ -1,583 +1,141 @@
-import {
-  IconArrowUpRight,
-  IconCheck,
-  IconCloud,
-  IconCopy,
-  IconPlugConnected,
-  IconServer,
-  IconTerminal2,
-} from "@tabler/icons-react";
+import { IconCheck, IconChevronRight, IconCopy } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
 
-type CopyKey = string;
+type Connection = "hosted" | "local";
 
-function useCopy() {
-  const [copied, setCopied] = useState<CopyKey | null>(null);
-  const copy = useCallback((text: string, key: CopyKey) => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
-  return { copied, copy };
-}
-
+const LOCAL_COMMAND = "npx -y @parseable/parseable-mcp-server@latest init";
 const HOSTED_URL = `${window.location.origin}/mcp`;
-const PARSEABLE_URL = "https://your-parseable.example.com";
-const API_KEY = "your-parseable-api-key";
 
-const DEMO_LOG_ROWS = [
-  {
-    ts: "14:02:31",
-    svc: "payment-service",
-    level: "ERROR",
-    msg: "charge_stripe: timeout after 5000ms",
+const CONTENT = {
+  local: {
+    title: "Local MCP",
+    eyebrow: "Open Source",
+    description: "Run the Parseable MCP server on your own machine. Full control over credentials and config.",
+    benefits: [
+      "Open source under Apache 2.0",
+      "Runs entirely inside your environment",
+      "Works with self-hosted Parseable instances",
+      "Full control over credentials and config",
+    ],
+    links: [
+      ["Local MCP setup guide", "https://www.parseable.com/docs/mcp"],
+      ["View on GitHub", "https://github.com/parseablehq/parseable-mcp-server"],
+    ],
+    steps: [
+      ["1. Install and configure", LOCAL_COMMAND, true],
+      ["2. Restart your MCP client", "Parseable tools appear after restart", false],
+    ],
   },
-  {
-    ts: "14:02:29",
-    svc: "payment-service",
-    level: "ERROR",
-    msg: "charge_stripe: timeout after 5000ms",
+  hosted: {
+    title: "Remote MCP",
+    eyebrow: "Streamable HTTP",
+    description: "Connect to a deployed MCP endpoint over HTTP. No local MCP server installation required.",
+    benefits: [
+      "Direct Parseable API key authentication",
+      "No MCP server installation on the client",
+      "Works with Parseable Cloud and self-hosted instances",
+      "Credentials remain in your MCP client configuration",
+    ],
+    links: [["Remote MCP setup guide", "https://www.parseable.com/docs/mcp"]],
+    steps: [
+      ["1. Use the hosted endpoint", HOSTED_URL, true],
+      ["2. Add your credentials", "X-API-Key: your-parseable-api-key", true],
+    ],
   },
-  {
-    ts: "14:02:26",
-    svc: "auth-service",
-    level: "ERROR",
-    msg: "JWT decode failed: signature mismatch",
-  },
-  {
-    ts: "14:02:21",
-    svc: "payment-service",
-    level: "ERROR",
-    msg: "charge_stripe: connection refused",
-  },
-  {
-    ts: "14:02:18",
-    svc: "api-gateway",
-    level: "ERROR",
-    msg: "upstream timeout: payment-service:3001",
-  },
-];
-
-function Demo() {
-  return (
-    <section className="mt-40">
-      <div className="max-w-page mx-auto px-4 md:px-0">
-        {/* Section header */}
-        <div className="flex flex-col items-center text-center gap-4 mb-14">
-          <h2
-            className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
-            style={{ fontFamily: '"Open Sans", sans-serif' }}
-          >
-            Debug production without opening a tab
-          </h2>
-          <p className="max-w-lg font-inter text-base text-black/60 leading-7">
-            Ask a question in plain English. The MCP server translates it to
-            SQL, queries Parseable, and returns structured results - right in
-            your AI client.
-          </p>
-        </div>
-
-        {/* Mock conversation */}
-        <div className="max-w-2xl mx-auto flex flex-col gap-4">
-          {/* User message */}
-          <div className="flex justify-end">
-            <div className="max-w-sm bg-parseableBlue-500 text-white rounded-xl rounded-tr-sm px-4 py-3 font-inter text-sm leading-6">
-              Why is the payment service throwing errors? Show me recent logs.
-            </div>
-          </div>
-
-          {/* Tool call chip */}
-          <div className="flex justify-start">
-            <div
-              className="inline-flex items-center gap-2 px-3 py-2 rounded border border-black/8 bg-white font-mono text-xs text-[#5E5F6E]"
-              style={{
-                fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-              }}
-            >
-              <IconTerminal2
-                size={13}
-                stroke={1.5}
-                aria-hidden="true"
-                className="text-parseableBlue-500"
-              />
-              <span className="text-parseableBlue-500">query_sql</span>
-              <span className="text-black/30">·</span>
-              <span>
-                SELECT * FROM logs WHERE service = &apos;payment-service&apos;
-                AND level = &apos;ERROR&apos; LIMIT 50
-              </span>
-            </div>
-          </div>
-
-          {/* Result table */}
-          <div className="rounded-xl border border-black/8 overflow-hidden bg-white">
-            <div className="px-4 py-2.5 border-b border-black/6 flex items-center justify-between">
-              <span className="font-inter text-xs font-medium text-[#5E5F6E]">
-                Result · 5 rows
-              </span>
-              <span
-                className="font-mono text-[10px] text-black/30"
-                style={{
-                  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                }}
-              >
-                32ms
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs font-inter">
-                <thead>
-                  <tr className="border-b border-black/6 bg-black/2">
-                    <th className="text-left px-4 py-2 font-medium text-[#5E5F6E] whitespace-nowrap">
-                      Timestamp
-                    </th>
-                    <th className="text-left px-4 py-2 font-medium text-[#5E5F6E] whitespace-nowrap">
-                      Service
-                    </th>
-                    <th className="text-left px-4 py-2 font-medium text-[#5E5F6E]">
-                      Level
-                    </th>
-                    <th className="text-left px-4 py-2 font-medium text-[#5E5F6E]">
-                      Message
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {DEMO_LOG_ROWS.map((row, i) => (
-                    <tr
-                      key={i}
-                      className="border-b border-black/4 last:border-0"
-                    >
-                      <td
-                        className="px-4 py-2 font-mono text-black/50 whitespace-nowrap"
-                        style={{
-                          fontFamily:
-                            '"JetBrains Mono", ui-monospace, monospace',
-                        }}
-                      >
-                        {row.ts}
-                      </td>
-                      <td className="px-4 py-2 text-[#14151A] whitespace-nowrap">
-                        {row.svc}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-600">
-                          {row.level}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-black/60 max-w-60 truncate">
-                        {row.msg}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Agent response */}
-          <div className="flex justify-start">
-            <div className="max-w-lg bg-white border border-black/8 rounded-xl rounded-tl-sm px-4 py-3 font-inter text-sm leading-6 text-[#14151A]">
-              <p>
-                The payment service is experiencing repeated Stripe API timeouts
-                - 4 of the 5 recent errors are
-                <code
-                  className="mx-1 px-1 py-0.5 rounded text-xs bg-black/5 font-mono"
-                  style={{
-                    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-                  }}
-                >
-                  charge_stripe: timeout after 5000ms
-                </code>
-                with one connection refused.
-              </p>
-              <p className="mt-2 text-black/60">
-                The api-gateway is also logging upstream timeouts to
-                payment-service:3001, suggesting the service is either
-                overloaded or its Stripe connection is degraded. I can check
-                latency trends or recent deploys if you&apos;d like.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Two ways ─────────────────────────────────────────────────────────────────
+} as const;
 
 export function TwoWays() {
-  const [activeTab, setActiveTab] = useState<"hosted" | "local">("hosted");
-  const [remoteMode, setRemoteMode] = useState<"cloud" | "self-hosted">(
-    "cloud",
-  );
-  const { copied, copy } = useCopy();
-  const hostedHeaders =
-    remoteMode === "cloud"
-      ? `X-Parseable-Mode: cloud\nX-API-Key: ${API_KEY}`
-      : `X-Parseable-URL: ${PARSEABLE_URL}\nX-API-Key: ${API_KEY}`;
-  const hostedCommand = `claude mcp add --transport http parseable ${HOSTED_URL} --scope user ${hostedHeaders
-    .split("\n")
-    .map((header) => `--header "${header}"`)
-    .join(" ")}`;
+  const [active, setActive] = useState<Connection>("local");
+  const [copied, setCopied] = useState<string | null>(null);
+  const content = CONTENT[active];
+
+  const copy = useCallback((value: string) => {
+    navigator.clipboard.writeText(value).catch(() => {});
+    setCopied(value);
+    setTimeout(() => setCopied(null), 2000);
+  }, []);
 
   return (
-    <section className="mt-40">
-      <div className="max-w-page mx-auto px-4 md:px-0">
-        {/* Header */}
-        <div className="flex flex-col items-center text-center gap-4 mb-12">
-          <h2
-            className="font-sans text-[3rem] font-medium leading-[112%] tracking-tight text-[rgba(0,0,0,0.76)]"
-            style={{ fontFamily: '"Open Sans", sans-serif' }}
-          >
-            Two ways to connect
+    <section id="connect" className="section-rule py-[76px] md:py-32">
+      <div className="mx-auto flex max-w-page flex-col items-center gap-[76px] px-4 md:px-0">
+        <div className="flex w-full max-w-[501px] flex-col items-center gap-[15px] text-center">
+          <h2 className="w-full font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
+            Two ways to <span className="text-[#1f40ed]">connect</span>
           </h2>
-          <p className="max-w-lg font-inter text-base text-black/50 leading-7">
-            Connect to a deployed MCP server over HTTP, or run the open-source
-            server locally over stdio.
+          <p className="text-[15px] leading-normal text-[#6d6d6d] md:text-base">
+            Connect to a deployed MCP server over HTTP, or run the open-source server locally over stdio.
           </p>
         </div>
 
-        {/* Tab toggle */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex rounded-lg p-1 border border-black/[0.07] bg-black/2">
-            {(["hosted", "local"] as const).map((tab) => (
+        <div className="flex w-full flex-col items-center gap-7">
+          <div className="flex h-[39px] w-full items-center gap-[5px] rounded-lg border border-[#e7e7e7] bg-[#e7e7e7] p-0.5 md:w-[337px]">
+            {(["hosted", "local"] as const).map((option) => (
               <button
-                key={tab}
+                key={option}
                 type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`inline-flex items-center gap-2 px-5 py-2 rounded-md font-inter text-sm transition-colors ${
-                  activeTab === tab
-                    ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
-                    : "text-black/40 hover:text-black/70"
-                }`}
+                onClick={() => setActive(option)}
+                aria-pressed={active === option}
+                className={`flex h-full flex-1 items-center justify-center rounded-md px-4 py-2 text-sm transition-colors ${active === option ? "bg-white text-[#3d3d3d]" : "text-[#5d5d5d] hover:text-[#3d3d3d]"}`}
               >
-                {tab === "hosted" ? (
-                  <IconPlugConnected size={15} stroke={1.5} />
-                ) : (
-                  <IconTerminal2 size={15} stroke={1.5} />
-                )}
-                {tab === "hosted" ? "Remote MCP" : "Local MCP"}
+                {option === "hosted" ? "Remote MCP" : "Local MCP"}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* Left: info card */}
-          <div className="rounded-xl p-8 flex flex-col gap-6 border border-black/[0.07] bg-white shadow-[0_1px_4px_0_rgba(0,0,0,0.04)]">
-            {activeTab === "hosted" ? (
-              <>
-                <span
-                  className="self-start inline-flex items-center px-2.5 py-1 rounded text-[11px] font-semibold"
-                  style={{
-                    background: "rgba(217,119,6,0.08)",
-                    color: "#B45309",
-                  }}
-                >
-                  Streamable HTTP
-                </span>
-                <div>
-                  <h3
-                    className="font-sans text-2xl font-medium text-[#14151A] mb-2"
-                    style={{ fontFamily: '"Open Sans", sans-serif' }}
-                  >
-                    Remote MCP
-                  </h3>
-                  <p className="font-inter text-sm text-black/55 leading-6">
-                    Connect to this deployed MCP endpoint. Cloud needs your API
-                    key; self-hosted also needs your Parseable URL.
-                  </p>
+          <div className="w-full overflow-hidden border border-[#e7e7e7] bg-white p-4 md:p-5">
+            <div className="flex w-full items-stretch gap-3.5 max-md:flex-col">
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-4">
+                <div className="flex flex-col items-start gap-2">
+                  <h3 className="font-sans text-[28px] font-normal leading-normal text-[#1b1b1b] md:text-[32px]">{content.title}</h3>
+                  <p className="text-base text-[#1b1b1b]">{content.eyebrow}</p>
                 </div>
-                <ul className="flex flex-col gap-3">
-                  {[
-                    "Direct Parseable API key authentication",
-                    "No MCP server installation on the client",
-                    "Works with Parseable Cloud and self-hosted instances",
-                    "Credentials remain in your MCP client configuration",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 font-inter text-sm text-black/60"
-                    >
-                      <svg
-                        width="14"
-                        height="11"
-                        viewBox="0 0 14 11"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M1 5.5l4 4 8-8"
-                          stroke="#00A896"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="https://www.parseable.com/docs/mcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors mt-2"
-                >
-                  Remote MCP setup guide <IconArrowUpRight size={14} />
-                </a>
-              </>
-            ) : (
-              <>
-                <span
-                  className="self-start inline-flex items-center px-2.5 py-1 rounded text-[11px] font-semibold"
-                  style={{ background: "rgba(0,0,0,0.05)", color: "#5E5F6E" }}
-                >
-                  Open source
-                </span>
-                <div>
-                  <h3
-                    className="font-sans text-2xl font-medium text-[#14151A] mb-2"
-                    style={{ fontFamily: '"Open Sans", sans-serif' }}
-                  >
-                    Local MCP
-                  </h3>
-                  <p className="font-inter text-sm text-black/55 leading-6">
-                    Run the Parseable MCP server on your own machine. Full
-                    control over credentials and config.
-                  </p>
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {[
-                    "Open source under Apache 2.0",
-                    "Runs entirely inside your environment",
-                    "Works with self-hosted Parseable instances",
-                    "Full control over credentials and config",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 font-inter text-sm text-black/60"
-                    >
-                      <svg
-                        width="14"
-                        height="11"
-                        viewBox="0 0 14 11"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M1 5.5l4 4 8-8"
-                          stroke="#00A896"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex gap-5 mt-2">
-                  <a
-                    href="https://www.parseable.com/docs/mcp"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors"
-                  >
-                    Local MCP setup guide <IconArrowUpRight size={14} />
-                  </a>
-                  <a
-                    href="https://github.com/parseablehq/parseable-mcp-server"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-inter text-sm font-medium text-parseableBlue-500 hover:text-[#2F2F70] hover:underline transition-colors"
-                  >
-                    View on GitHub <IconArrowUpRight size={14} />
-                  </a>
-                </div>
-              </>
-            )}
-          </div>
 
-          {/* Right: numbered steps */}
-          <div className="flex flex-col gap-4">
-            {activeTab === "hosted" ? (
-              <>
-                <div className="inline-flex self-start rounded-lg p-1 border border-black/[0.07] bg-black/2">
-                  {(["cloud", "self-hosted"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      aria-pressed={remoteMode === mode}
-                      onClick={() => setRemoteMode(mode)}
-                      className={`inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-md font-inter text-xs transition-colors ${
-                        remoteMode === mode
-                          ? "bg-white text-[#14151A] shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] font-medium"
-                          : "text-black/40 hover:text-black/70"
-                      }`}
-                    >
-                      {mode === "cloud" ? (
-                        <IconCloud size={13} stroke={1.5} />
-                      ) : (
-                        <IconServer size={13} stroke={1.5} />
-                      )}
-                      {mode === "cloud" ? "Parseable Cloud" : "Self-hosted"}
-                    </button>
+                <div className="flex h-[77px] w-full max-w-[626px] items-start border-b border-dashed border-[#b0b0b0] py-2.5">
+                  <p className="text-base font-medium leading-normal text-[#3d3d3d]">{content.description}</p>
+                </div>
+
+                <div className="flex w-full max-w-[626px] flex-col items-start gap-3 text-sm">
+                  <p className="text-black">Benefits :</p>
+                  <ul className="flex w-full flex-col gap-3">
+                    {content.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-center gap-1.5 text-[#3d3d3d]">
+                        <IconCheck size={20} stroke={1.5} className="shrink-0 text-[#1f40ed]" aria-hidden="true" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex flex-col items-start gap-3 md:flex-row md:flex-wrap md:items-center md:gap-6">
+                  {content.links.map(([label, href]) => (
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-base font-medium leading-[1.53] text-[#1f40ed] hover:text-[#1834c9]">
+                      {label}<IconChevronRight size={22} stroke={1.5} />
+                    </a>
                   ))}
                 </div>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        1. Add the Parseable MCP server
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => copy(hostedCommand, "tw-step1")}
-                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
-                      >
-                        {copied === "tw-step1" ? (
-                          <IconCheck
-                            size={13}
-                            stroke={2}
-                            className="text-[#00A896]"
-                          />
-                        ) : (
-                          <IconCopy size={13} stroke={1.5} />
+              </div>
+
+              <div className="w-full shrink-0 md:w-[487px]">
+                <div className="flex w-full flex-col items-start gap-6 rounded-xl border border-[#e7e7e7] bg-[#fafafa] p-4">
+                  {content.steps.map(([label, value, canCopy]) => (
+                    <div key={label} className="flex w-full flex-col items-start gap-2">
+                      <p className="text-base text-[#00020f]">{label}</p>
+                      <div className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[#e7e7e7] bg-white p-3">
+                        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs leading-[1.5] text-[#24292e]">{value}</code>
+                        {canCopy && (
+                          <button type="button" onClick={() => copy(value)} aria-label={`Copy ${label}`} className="flex size-4 shrink-0 items-center justify-center text-[#24292e] hover:text-[#1f40ed]">
+                            {copied === value ? <IconCheck size={16} /> : <IconCopy size={16} stroke={1.5} />}
+                          </button>
                         )}
-                      </button>
+                      </div>
                     </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>{hostedCommand}</code>
-                    </pre>
-                  </div>
+                  ))}
                 </div>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        2. Credentials sent with every request
-                      </p>
-                    </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>{hostedHeaders}</code>
-                    </pre>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        Endpoint URL
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => copy(HOSTED_URL, "tw-url")}
-                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
-                      >
-                        {copied === "tw-url" ? (
-                          <IconCheck
-                            size={13}
-                            stroke={2}
-                            className="text-[#00A896]"
-                          />
-                        ) : (
-                          <IconCopy size={13} stroke={1.5} />
-                        )}
-                      </button>
-                    </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>{HOSTED_URL}</code>
-                    </pre>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        1. Install and configure
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copy(
-                            "npx -y @parseable/parseable-mcp-server@latest init",
-                            "tw-install",
-                          )
-                        }
-                        className="text-coolGray-500 hover:text-[#14151A] transition-colors shrink-0"
-                      >
-                        {copied === "tw-install" ? (
-                          <IconCheck
-                            size={13}
-                            stroke={2}
-                            className="text-[#00A896]"
-                          />
-                        ) : (
-                          <IconCopy size={13} stroke={1.5} />
-                        )}
-                      </button>
-                    </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>npx -y @parseable/parseable-mcp-server@latest init</code>
-                    </pre>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="rounded-xl border border-coolGray-900 overflow-hidden"
-                    style={{ background: "rgba(244,244,245,0.5)" }}
-                  >
-                    <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-coolGray-900">
-                      <p className="font-inter text-xs font-medium text-black/45 truncate">
-                        2. Restart your MCP client
-                      </p>
-                    </div>
-                    <pre
-                      className="px-4 py-3 text-[13px] text-coolGray-200 overflow-x-auto"
-                      style={{ fontFamily: '"JetBrains Mono", monospace' }}
-                    >
-                      <code>Parseable tools appear after restart</code>
-                    </pre>
-                  </div>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
-
-// ─── Feature Grid ─────────────────────────────────────────────────────────────
