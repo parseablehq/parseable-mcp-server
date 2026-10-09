@@ -56,6 +56,8 @@ body {
 
 button, input, textarea, select { font: inherit; }
 ::selection { color: white; background: #1f40ed; }
+.mobile-tab-scroller { scrollbar-width: none; }
+.mobile-tab-scroller::-webkit-scrollbar { display: none; }
 .section-rule { border-top: 1px solid #e7e7e7; }
 .section-heading { font-family: Archivo, sans-serif; font-weight: 300; color: #1b1b1b; }
 .section-separator {
@@ -63,6 +65,13 @@ button, input, textarea, select { font: inherit; }
   width: 100%;
   border-block: 1px solid #e7e7e7;
   background-image: repeating-linear-gradient(to right, #e7e7e7 0 1px, transparent 1px 16.5px);
+}
+
+@media (max-width: 1079px) {
+  .section-separator {
+    background-position: left top;
+    background-size: 16.5px 100%;
+  }
 }
 
 .site-shell {

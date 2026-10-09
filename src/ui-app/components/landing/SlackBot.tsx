@@ -12,16 +12,16 @@ const SLACK_INSTALL_URL =
 
 export function SlackBot() {
   return (
-    <section className="py-32">
-      <div className="mx-auto max-w-page px-6 md:px-0">
-        <div className="flex flex-col items-center justify-center border border-[#e7e7e7] bg-white p-8 md:flex-row">
+    <section className="py-[76px] md:py-32">
+      <div className="mx-auto max-w-page px-4 md:px-0">
+        <div className="flex flex-col items-center justify-center border border-[#e7e7e7] bg-white p-6 md:flex-row md:p-8">
           <div className="flex w-full items-stretch gap-3.5 rounded-lg max-md:flex-col">
             <div className="flex min-w-0 flex-1 flex-col items-start gap-4">
-              <h2 className="w-full font-sans text-[32px] font-light leading-normal text-[#3d3d3d]">
+              <h2 className="w-full font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
                 Your <span className="text-[#1f40ed]">entire observability stack</span>, accessible from Slack Platform
               </h2>
 
-              <div className="flex h-[43px] w-full items-start border-b border-dashed border-[#b0b0b0] py-2.5">
+              <div className="flex min-h-[59px] w-full items-start border-b border-dashed border-[#b0b0b0] py-2.5 md:min-h-0 md:h-[43px]">
                 <p className="text-base font-medium leading-normal text-[#1b1b1b]">
                   Query logs, metrics, traces, and alerts without leaving Slack, right in the thread.
                 </p>
@@ -44,7 +44,7 @@ export function SlackBot() {
               </a>
             </div>
 
-            <div className="flex min-h-[336px] w-full shrink-0 items-center justify-center overflow-hidden bg-[#fafafa] px-6 py-10 md:w-[487px]">
+            <div className="flex min-h-[342px] w-full shrink-0 items-center justify-center overflow-hidden bg-[#fafafa] px-6 py-10 md:min-h-[336px] md:w-[487px]">
               <img
                 src="/assets/slackbot-preview.png"
                 alt="Parseable Slack bot answering an observability question in a thread"

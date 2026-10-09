@@ -121,11 +121,11 @@ export function Nav() {
   }, [mobileOpen]);
 
   return (
-    <header className={`site-header h-[72px] border-b border-[#e7e7e7] bg-white transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
-      <div className="mx-auto flex h-full w-full max-w-[1377px] items-center justify-between px-6 lg:px-0">
+    <header className={`site-header h-[60px] border-b border-[#e7e7e7] bg-white transition-shadow md:h-[72px] ${scrolled ? "shadow-sm" : ""}`}>
+      <div className="mx-auto flex h-full w-full max-w-[1377px] items-center justify-between px-4 md:px-6 lg:px-0">
         <div className="flex items-center gap-16">
-        <Link href={SITE} aria-label="Parseable home" className="block size-8 overflow-hidden">
-          <Image src="/assets/CompleteLogo.svg" alt="" width={206} height={32} priority className="h-8 w-[206px] max-w-none" />
+        <Link href={SITE} aria-label="Parseable home" className="block size-6 overflow-hidden md:size-8">
+          <Image src="/assets/CompleteLogo.svg" alt="" width={206} height={32} priority className="h-6 w-[155px] max-w-none md:h-8 md:w-[206px]" />
         </Link>
 
         <nav className="relative hidden items-center gap-6 lg:flex" aria-label="Main navigation">
@@ -167,7 +167,7 @@ export function Nav() {
           <Link href="https://app.parseable.com/" target="_blank" rel="noopener noreferrer" className="ml-1 flex h-9 items-center rounded-lg bg-[#3d3d3d] px-3 text-sm font-medium text-white hover:bg-[#1b1b1b]">Start for free</Link>
         </div>
 
-        <button type="button" onClick={() => setMobileOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center justify-self-end rounded-lg text-[#3A3A8C] lg:hidden" aria-label="Open menu"><IconMenu2 size={24} /></button>
+        <button type="button" onClick={() => setMobileOpen(true)} className="flex size-6 cursor-pointer items-center justify-center justify-self-end text-[#1b1b1b] lg:hidden" aria-label="Open menu"><IconMenu2 size={24} /></button>
       </div>
 
       {mobileOpen && (

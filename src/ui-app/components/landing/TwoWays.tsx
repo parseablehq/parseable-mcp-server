@@ -56,19 +56,19 @@ export function TwoWays() {
   }, []);
 
   return (
-    <section id="connect" className="section-rule py-32">
-      <div className="mx-auto flex max-w-page flex-col items-center gap-[76px] px-6 md:px-0">
+    <section id="connect" className="section-rule py-[76px] md:py-32">
+      <div className="mx-auto flex max-w-page flex-col items-center gap-[76px] px-4 md:px-0">
         <div className="flex w-full max-w-[501px] flex-col items-center gap-[15px] text-center">
-          <h2 className="w-full font-sans text-[32px] font-light leading-normal text-[#3d3d3d]">
+          <h2 className="w-full font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
             Two ways to <span className="text-[#1f40ed]">connect</span>
           </h2>
-          <p className="text-base leading-normal text-[#6d6d6d]">
+          <p className="text-[15px] leading-normal text-[#6d6d6d] md:text-base">
             Connect to a deployed MCP server over HTTP, or run the open-source server locally over stdio.
           </p>
         </div>
 
         <div className="flex w-full flex-col items-center gap-7">
-          <div className="flex h-[39px] w-[337px] items-center gap-[5px] rounded-lg border border-[#e7e7e7] bg-[#e7e7e7] p-0.5">
+          <div className="flex h-[39px] w-full items-center gap-[5px] rounded-lg border border-[#e7e7e7] bg-[#e7e7e7] p-0.5 md:w-[337px]">
             {(["hosted", "local"] as const).map((option) => (
               <button
                 key={option}
@@ -82,11 +82,11 @@ export function TwoWays() {
             ))}
           </div>
 
-          <div className="w-full overflow-hidden border border-[#e7e7e7] bg-white p-5">
+          <div className="w-full overflow-hidden border border-[#e7e7e7] bg-white p-4 md:p-5">
             <div className="flex w-full items-stretch gap-3.5 max-md:flex-col">
               <div className="flex min-w-0 flex-1 flex-col items-start gap-4">
                 <div className="flex flex-col items-start gap-2">
-                  <h3 className="font-sans text-[32px] font-normal leading-normal text-[#1b1b1b]">{content.title}</h3>
+                  <h3 className="font-sans text-[28px] font-normal leading-normal text-[#1b1b1b] md:text-[32px]">{content.title}</h3>
                   <p className="text-base text-[#1b1b1b]">{content.eyebrow}</p>
                 </div>
 
@@ -106,7 +106,7 @@ export function TwoWays() {
                   </ul>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-6">
+                <div className="flex flex-col items-start gap-3 md:flex-row md:flex-wrap md:items-center md:gap-6">
                   {content.links.map(([label, href]) => (
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-base font-medium leading-[1.53] text-[#1f40ed] hover:text-[#1834c9]">
                       {label}<IconChevronRight size={22} stroke={1.5} />

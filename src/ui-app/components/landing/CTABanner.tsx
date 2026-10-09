@@ -4,9 +4,24 @@ import { Link } from "../ui/Link";
 export function CTABanner() {
   return (
     <div
-      className="section-rule w-full shrink-0 bg-[#fafafa]"
+      className="mb-[76px] w-full shrink-0 border-y border-dashed border-[#b0b0b0] bg-[#fafafa] md:mb-0 md:border-x-0 md:border-b-0 md:border-t md:border-solid md:border-[#e7e7e7]"
     >
-      <div className="flex flex-col items-center justify-center py-24 px-6">
+      <div className="flex flex-col items-center justify-center px-6 py-10 md:hidden">
+        <div className="flex max-w-[364px] flex-col items-center gap-6 text-center">
+          <div className="flex flex-col gap-3">
+            <h2 className="section-heading text-[28px] leading-[34px]">
+              See your data in <span className="text-[#1f40ed]">a new light</span>
+            </h2>
+            <p className="text-sm leading-[18px] text-[#6d6d6d]">
+              Parseable unifies telemetry data, keeps full-fidelity data queryable. It all lives in open formats on object store with your complete control and ownership.
+            </p>
+          </div>
+          <Link href="https://app.parseable.com" target="_blank" rel="noopener noreferrer" className="flex h-[43px] w-full items-center justify-center rounded-lg bg-[#1f40ed] text-base font-medium text-white">
+            Explore more
+          </Link>
+        </div>
+      </div>
+      <div className="hidden flex-col items-center justify-center py-24 px-6 md:flex">
         <div className="flex flex-col items-center gap-6 text-center max-w-3xl">
           <h2 className="section-heading text-[40px] leading-[48px] tracking-[-0.03em]">
             Your Observability data <span className="text-[#1f40ed]">deserves better than a dashboard</span>

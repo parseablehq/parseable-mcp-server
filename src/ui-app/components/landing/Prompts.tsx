@@ -93,34 +93,34 @@ export function Prompts() {
   const filtered = category === "Discover" ? featured : category === "All" ? PROMPTS : PROMPTS.filter((p) => p.category === category);
 
   return (
-    <section className="section-rule py-32">
-      <div className="mx-auto flex max-w-page flex-col items-center gap-19 px-6 md:px-0">
+    <section className="section-rule py-[76px] md:py-32">
+      <div className="mx-auto flex max-w-page flex-col items-center gap-19 px-4 md:px-0">
         <div className="flex w-full max-w-125.25 flex-col items-center gap-3.75 text-center">
-          <h2 className="w-full font-sans text-[32px] font-light leading-normal text-[#3d3d3d]">
+          <h2 className="w-full font-sans text-[28px] font-light leading-9 text-[#3d3d3d] md:text-[32px] md:leading-normal">
             Copy, paste, and ask
           </h2>
-          <p className="text-base leading-normal text-[#6d6d6d]">
+          <p className="text-[15px] leading-normal text-[#6d6d6d] md:text-base">
             These prompts work out of the box with any MCP-compatible AI client
             connected to Parseable.
           </p>
         </div>
 
         <div className="flex w-full flex-col items-center gap-7">
-          <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Filter prompts by category">
+          <div className="mobile-tab-scroller flex w-full items-center justify-start gap-2 overflow-x-auto px-1 py-1 md:w-auto md:flex-wrap md:justify-center md:overflow-visible md:px-0" role="group" aria-label="Filter prompts by category">
             {PROMPT_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setCategory(cat)}
                 aria-pressed={category === cat}
-                className={`flex h-9.25 items-center cursor-pointer justify-center text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed] ${category === cat ? "rounded-lg border border-[#3d3d3d] bg-[#3d3d3d] px-4 py-2 text-[#fafafa] shadow-[0_0_0_2px_white,0_0_0_3px_#3d3d3d]" : "rounded-md border border-[#e7e7e7] bg-[#fafafa] px-4 py-2 text-[#3d3d3d] hover:border-[#b0b0b0]"}`}
+                className={`flex h-9.25 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-2.5 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f40ed] md:px-4 md:text-sm ${category === cat ? "rounded-lg border border-[#3d3d3d] bg-[#3d3d3d] text-[#fafafa] shadow-[0_0_0_2px_white,0_0_0_3px_#3d3d3d]" : "rounded-md border border-[#e7e7e7] bg-[#fafafa] text-[#3d3d3d] hover:border-[#b0b0b0]"}`}
               >
                 {cat}
               </button>
             ))}
           </div>
 
-          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full grid-cols-1 gap-4 px-0 sm:grid-cols-2 md:px-0 lg:grid-cols-3">
             {filtered.map((prompt, i) => (
               <div key={`${prompt.text}-${i}-${category}`} className="flex min-h-16.5 items-start gap-2.5 rounded-xl border border-[#e7e7e7] bg-[#fafafa] p-3">
                 <p className="min-w-0 flex-1 text-sm leading-normal text-[#24292e]">{prompt.text}{prompt.text.endsWith("?") || prompt.text.endsWith(".") ? "" : "."}</p>

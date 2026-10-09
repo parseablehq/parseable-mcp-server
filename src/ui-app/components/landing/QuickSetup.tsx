@@ -271,13 +271,13 @@ function DarkCodeBlock({
 
 function ClientRow({ clients }: { clients: Client[] }) {
   return (
-    <div className="flex flex-wrap items-center gap-5">
+    <div className="flex min-w-0 flex-nowrap items-center gap-2 md:flex-wrap md:gap-5">
       {clients.map((client) => (
-        <div key={client} className="flex items-center gap-1.5 text-black">
-          <span className="flex size-[18px] items-center [&>img]:size-[18px]">
+        <div key={client} className="flex shrink-0 items-center gap-1 text-black md:gap-1.5">
+          <span className="flex size-2.5 shrink-0 items-center [&>img]:size-2.5 md:size-[18px] md:[&>img]:size-[18px]">
             {CLIENT_ICONS[client]}
           </span>
-          <span className="font-inter text-sm leading-normal">{client}</span>
+          <span className="font-inter text-[10px] leading-normal md:text-sm">{client}</span>
         </div>
       ))}
     </div>
@@ -294,7 +294,7 @@ function ModeToggle({
   compact?: boolean;
 }) {
   return (
-    <div className={`inline-flex items-center rounded-lg border border-[#e7e7e7] bg-[#e7e7e7] ${compact ? "h-8 p-0.5" : "h-[39px] w-[337px] gap-[5px] p-0.5"}`}>
+    <div className={`inline-flex items-center rounded-lg border border-[#e7e7e7] bg-[#e7e7e7] ${compact ? "h-8 p-0.5" : "h-[39px] w-full gap-[5px] p-0.5 md:w-[337px]"}`}>
       {(["cloud", "self-hosted"] as const).map((option) => (
         <button
           key={option}
@@ -325,15 +325,15 @@ export function QuickSetup() {
   const configs = manualConfig(mode);
 
   return (
-    <section className="pb-32">
-      <div className="max-w-page mx-auto px-6 md:px-0">
+    <section className="pb-[76px] md:pb-32">
+      <div className="max-w-page mx-auto px-4 md:px-0">
         {/* Mode toggle — shared across every block below */}
         <div className="mb-6 flex justify-center">
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
 
         {/* Accordion — one group open at a time, first one open by default */}
-        <div className="mx-auto flex max-w-[800px] flex-col gap-5 rounded-xl border border-[#e7e7e7] bg-[#fafafa] p-3">
+        <div className="mx-auto flex max-w-[800px] flex-col gap-4 rounded-xl border border-[#e7e7e7] bg-[#fafafa] p-2 md:gap-5 md:p-3">
           {GROUPS.map((group) => {
             const isInit = group.id === "init";
             const isOpen = openGroup === group.id;
