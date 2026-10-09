@@ -252,7 +252,9 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
     console.log(
       `\n✓ Configuration saved to ${selectedTarget.configPath} for ${selectedTarget.name}`,
     );
-    console.log(`Restart ${selectedTarget.name} to load 27 Parseable tools.`);
+    console.log(
+      `Restart ${selectedTarget.name} to load tools provided by your Parseable instance.`,
+    );
   } catch (err) {
     console.error(`✗ Failed to write config: ${(err as Error).message}`);
     process.exit(1);

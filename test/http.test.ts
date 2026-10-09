@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCloudRoutingCache } from "../src/cloud.js";
 import { app } from "../src/http.js";
+import { clearToolRegistryCache } from "../src/remote-tools.js";
 
 const goodHeaders = {
   "x-parseable-url": "https://parseable.example.com",
@@ -124,12 +125,16 @@ describe("HTTP /mcp with mocked upstream", () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    globalThis.fetch = vi.fn().mockImplementation(async () => new Response("[]", { status: 200 }));
+    clearToolRegistryCache();
+    globalThis.fetch = vi
+      .fn()
+      .mockImplementation(async () => Response.json({ tools: [] }, { status: 200 }));
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
+    clearToolRegistryCache();
   });
 
   it("initialize → returns serverInfo with Parseable title", async () => {
@@ -143,6 +148,17 @@ describe("HTTP /mcp with mocked upstream", () => {
     expect(payload.result.serverInfo.title).toBe("Parseable");
     expect(payload.result.serverInfo.name).toBe("parseable-mcp-server");
   });
+
+  it("rejects initialization when Parseable registry authentication fails", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response("unauthorized", { status: 401, statusText: "Unauthorized" }),
+    );
+    const res = await app.fetch(mcpReq(initBody));
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({
+      error: expect.stringMatching(/Authentication failed/),
+    });
+  });
 });
 
 describe("HTTP /mcp cloud mode", () => {
@@ -150,6 +166,7 @@ describe("HTTP /mcp cloud mode", () => {
 
   beforeEach(() => {
     clearCloudRoutingCache();
+    clearToolRegistryCache();
     process.env.PARSEABLE_ORCHESTRATOR_URL = "https://cloud.example.com";
     process.env.PARSEABLE_CLOUD_AUTH_TOKEN = "service-token";
   });
@@ -159,26 +176,30 @@ describe("HTTP /mcp cloud mode", () => {
     delete process.env.PARSEABLE_ORCHESTRATOR_URL;
     delete process.env.PARSEABLE_CLOUD_AUTH_TOKEN;
     clearCloudRoutingCache();
+    clearToolRegistryCache();
     vi.restoreAllMocks();
   });
 
   it("initializes using only mode and API key", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      Response.json({
-        workspace_id: "workspace-1",
-        workspace_name: "Production",
-        tenant_id: "tenant-1",
-        url: "https://query.example.com",
-        ingest_url: "https://ingest.example.com",
-        state: "ready",
-        multi_tenant: true,
-      }),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          workspace_id: "workspace-1",
+          workspace_name: "Production",
+          tenant_id: "tenant-1",
+          url: "https://query.example.com",
+          ingest_url: "https://ingest.example.com",
+          state: "ready",
+          multi_tenant: true,
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ tools: [] }));
     const res = await app.fetch(
       mcpReq(initBody, { "x-parseable-mode": "cloud", "x-api-key": "cloud-key" }),
     );
     expect(res.status).toBe(200);
-    expect(globalThis.fetch).toHaveBeenCalledOnce();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("returns cloud validation 401 to MCP caller", async () => {

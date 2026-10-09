@@ -22,7 +22,7 @@ const FEATURES = [
   {
     icon: BoltIcon,
     title: "Full tool surface",
-    description: "Datasets, alerts, RBAC roles, and cluster health are all exposed - not just raw log search.",
+    desc: "Your Parseable instance publishes its live OSS, Enterprise, or Cloud tool catalog.",
   },
   {
     icon: ShieldCheckIcon,
@@ -37,7 +37,7 @@ const FEATURES = [
   {
     icon: Alert01Icon,
     title: "Safety rails built in",
-    description: "query_sql blocks all DDL and DML. Admin tools are read-only. You can't break production by asking.",
+    desc: "Parseable validates tool input and enforces RBAC at execution time.",
   },
 ];
 
