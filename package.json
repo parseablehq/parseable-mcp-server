@@ -1,6 +1,6 @@
 {
   "name": "@parseable/parseable-mcp-server",
-  "version": "0.2.16",
+  "version": "0.3.0",
   "mcpName": "io.github.parseablehq/parseable-mcp-server",
   "description": "Model Context Protocol server for Parseable. Lets LLMs discover and query Parseable datasets.",
   "repository": {
@@ -18,9 +18,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/server.js",
+    "clean": "node scripts/clean.mjs",
+    "build": "npm run clean && npm run build:server",
+    "build:server": "tsc && chmod +x dist/server.js",
     "build:ui": "vite build",
-    "build:all": "npm run build:ui && npm run build",
+    "build:all": "npm run clean && npm run build:ui && npm run build:server",
     "dev": "tsc --watch",
     "dev:ui": "vite",
     "start": "node dist/server.js",
@@ -30,7 +32,7 @@
     "lint": "biome check src test",
     "format": "biome format --write src test",
     "fix": "biome check --write src test",
-    "prepublishOnly": "npm run build && npm run lint && npm test"
+    "prepublishOnly": "npm run build:all && npm run lint && npm test"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",

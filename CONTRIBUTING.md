@@ -1,115 +1,61 @@
 # Contributing
 
-Thanks for helping improve `parseable-mcp-server`. This document covers the design principles, layout, and the practical mechanics of adding a tool or fixing a bug.
+`parseable-mcp-server` is a thin MCP-to-Parseable adapter. Parseable owns tool
+definitions, validation, RBAC, execution, and edition-specific capabilities.
+This repository must not duplicate tool implementations.
 
-## Design principles
+## Architecture
 
-1. **Auth is the trust boundary.** If a user supplies credentials, they trust the MCP client. No env-var write-gates - MCP clients already show per-call approval UI. Re-introduce gates only for hosted/multi-tenant variants.
-2. **Time-bounded queries are mandatory.** Never unbounded scans. Default window 60 minutes, max 1440.
-3. **Row caps are enforced.** Default 100, hard max via `PARSEABLE_MAX_ROWS` (default 1000).
-4. **One tool, one verb.** No mega-tools.
-5. **Tool descriptions are user-facing.** They tell the calling client when to use the tool, not just what.
-6. **No `ingest_event` tool.** Wrong shape, encourages garbage data - use Parseable's ingest API directly.
-7. **No destructive tools** (`delete_*`). Force the Parseable UI for safety. Destructiveness is asymmetric.
-8. **Loud descriptions on side-effecting tools.** `evaluate_alert` warns "MAY TRIGGER REAL NOTIFICATIONS" so callers confirm with the user first.
-9. **Cross-platform first.** Tools-only over stdio is universal. Optional MCP features (elicitation, prompts, resources) only with a chat-Q&A fallback that works everywhere.
+```text
+MCP tools/list
+  -> GET /api/prism/v1/llm/tools/list
 
-## Parseable API gotchas
-
-Reference docs:
-- [API Reference](https://www.parseable.com/docs/api)
-- [Alerting](https://www.parseable.com/docs/user-guide/alerting)
-- [RBAC](https://www.parseable.com/docs/user-guide/rbac)
-- [PromQL](https://www.parseable.com/docs/user-guide/promql)
-- [Retention](https://www.parseable.com/docs/user-guide/retention)
-- [Installation modes (self-hosted)](https://www.parseable.com/docs/self-hosted/installation)
-- [SQL Editor](https://www.parseable.com/docs/user-guide/sql-editor)
-
-Things we learned the hard way (not always obvious from docs):
-- Query payload uses **camelCase** keys. Required: `query`, `startTime`, `endTime`. Optional: `sendNull`.
-- Auth is **Basic** (username:password base64). Switch to PAT when Parseable ships it server-side.
-- All paths prefixed `/api/v1` - except PromQL.
-- **PromQL endpoints live under `/prometheus/api/v1/`** (different base). `start`/`end`/`time` params must be **unix epoch seconds** in practice - `query_promql` auto-converts RFC3339 → epoch before sending.
-- Cluster endpoints (`/cluster/info`, `/cluster/metrics`) only exist on **distributed** Parseable. Standalone returns 404. The `classifyStatus` helper surfaces a clear hint.
-
-## File layout
-
-```
-src/
-├── server.ts              # MCP wire-up, stdio transport, tool registration loop
-├── config.ts              # env loader
-├── client.ts              # Parseable HTTP client (Basic auth, AbortController timeout, error classification)
-└── tools/
-    ├── types.ts           # ToolDef interface + jsonResult/errorResult helpers
-    ├── index.ts           # tool registry - add new tools here
-    └── <tool_name>.ts     # one file per tool
-test/
-├── client.test.ts         # parseErrorBody, classifyStatus, request behavior
-├── client_methods.test.ts # parametrized: every client method's verb + URL + body
-├── tools.test.ts          # logic-heavy tools (query_sql, query_promql, explain_query)
-├── tools_passthrough.test.ts  # every pass-through tool delegates correctly
-├── registry.test.ts       # meta: unique names, snake_case, no destructive tools
-├── config.test.ts         # env vars, defaults, overrides
-└── types.test.ts          # jsonResult / errorResult helpers
+MCP tools/call
+  -> POST /api/prism/v1/llm/tools/call
 ```
 
-## Adding a tool
+Registry responses are validated, cached per Parseable URL, tenant, and
+credential scope, then revalidated with `ETag`. Invocation results must be a
+valid MCP `CallToolResult` and are never cached.
 
-1. Create `src/tools/<name>.ts` exporting a `ToolDef`.
-2. Append to the array in `src/tools/index.ts`. The server auto-registers everything in that array.
-3. Add a HTTP method to `src/client.ts` if a new endpoint is involved.
-4. Add a test entry to `test/client_methods.test.ts` (verb + URL).
-5. Add a pass-through test to `test/tools_passthrough.test.ts` for boring tools, or a logic test in `test/tools.test.ts` for tools with their own behavior.
-6. `npm run lint && npm test && npm run build`.
+Key files:
 
-Tool description guidelines:
-- Tell the caller *when* to use the tool, not just what.
-- Mention prerequisite tools (e.g. "Use `list_datasets` first to discover names").
-- Loud-warn on side effects: "MAY FIRE REAL NOTIFICATIONS", "Destructive - confirm first".
-- Keep description under ~500 chars unless steering a multi-step flow.
+```text
+src/bootstrap.ts       MCP tools/list and tools/call handlers
+src/client.ts          Parseable registry and invocation HTTP client
+src/remote-tools.ts    registry validation, LRU/TTL cache, ETag state
+src/http.ts            stateless Streamable HTTP transport and request auth
+src/stdio.ts           stdio transport
+src/cloud.ts           Parseable Cloud API-key routing
+```
 
-## TypeScript gotcha
+## Adding or changing tools
 
-`McpServer.registerTool` has deeply nested generic inference (`OutputArgs`/`InputArgs` union with `AnySchema`). Calling it inside a `for (const tool of tools)` loop triggers `TS2589: Type instantiation is excessively deep`. Workaround in `src/server.ts`: cast to a simpler function signature before invocation. Don't unwind into per-file registrations - the loop is fine, the cast is the right fix.
+Tool changes belong in the Parseable server catalog and executor. This adapter
+should change only when the REST or MCP contract changes.
 
-## Lint + format - Biome
+Required invariants:
 
-Single tool replaces ESLint + Prettier. Config in `biome.json`.
+- Forward caller authentication and tenant routing on every upstream request.
+- Reject malformed registries, invalid schemas, and duplicate tool names.
+- Never cache tool invocation results.
+- Scope registry cache entries so credentials cannot share private catalogs.
+- Forward structured Parseable tool failures as MCP tool results.
+- Convert malformed upstream results and transport failures into MCP errors.
+- Do not log API keys, tool arguments, or tool results.
 
-- 2-space indent, 100-char line width
-- Double quotes, semicolons, trailing commas
-- Imports auto-organized on `npm run fix`
-- `useImportType` (warn) - prefer `import type` for types
-- `useNodejsImportProtocol` (warn) - `node:fs` not `fs`
-- `noNonNullAssertion` (warn) - prefer `if (x)` narrowing over `x!`
-- `noExplicitAny` (warn)
+## Verification
 
-Commands:
-- `npm run lint` - check only (CI uses this)
-- `npm run fix` - apply all safe auto-fixes (imports, formatting, lint rules)
-- `npm run format` - formatting only
+```bash
+npm run lint
+npm run build:all
+npm test
+```
 
-Biome runs in ~10ms across the whole repo.
+Tests use Vitest, native `fetch` mocks, and linked in-memory MCP transports.
+Add coverage for both REST mapping and complete MCP discovery/invocation flows.
 
-## Testing
+## Style and release
 
-Vitest + native `fetch` mocking. Tests live in `test/*.test.ts`. Coverage via `npm run test:coverage` (v8 provider). Excluded: `src/server.ts` (boot wiring), `src/tools/index.ts` (registry - covered by `registry.test.ts`).
-
-Current: **95% statements / 98% functions / 95% lines / 108 tests**.
-
-## CI
-
-`.github/workflows/ci.yml` runs on push + PR to main: `npm ci` → `npm run lint` → `npm run build:all` → `npm test`. Node 22.
-
-## Deliberately excluded - won't be accepted
-
-- `ingest_event` - wrong shape for this protocol
-- `delete_*` - destructive, UI only
-- `create_user` / `create_role` / RBAC mutation - UI/CLI only
-- Live tail / streaming subscriptions - stdio transport not the right fit; use Parseable UI
-
-## Releasing
-
-Publishing a GitHub Release triggers `.github/workflows/release.yml`. The workflow verifies that the release tag matches the version in `package.json`, runs lint + build + test, then publishes the package to npm through trusted publishing with automatic provenance.
-
-Before the first release, configure a GitHub Actions trusted publisher in the package settings on npmjs.com. Use organization `parseablehq`, repository `parseable-mcp-server`, workflow `release.yml`, and allow `npm publish`. No npm token is required. Create releases with a `v`-prefixed tag matching `package.json` (for example, package version `0.3.0` requires tag `v0.3.0`).
+Biome owns formatting and linting (`npm run fix`). GitHub releases trigger npm
+publishing; release tag and `package.json` version must match.

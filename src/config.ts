@@ -5,8 +5,6 @@ export interface Config {
   apiKey: string;
   tenantId?: string;
   mode?: "cloud" | "self-hosted";
-  defaultDataset?: string;
-  maxRows: number;
   queryTimeoutMs: number;
 }
 
@@ -20,8 +18,6 @@ export function loadConfig(): Config {
   return {
     url: required("PARSEABLE_URL").replace(/\/+$/, ""),
     apiKey: required("PARSEABLE_API_KEY"),
-    defaultDataset: process.env.PARSEABLE_DEFAULT_DATASET || undefined,
-    maxRows: Number(process.env.PARSEABLE_MAX_ROWS ?? 1000),
     queryTimeoutMs: Number(process.env.PARSEABLE_QUERY_TIMEOUT_MS ?? 30000),
   };
 }

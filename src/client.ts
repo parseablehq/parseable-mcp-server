@@ -15,272 +15,137 @@ export class ParseableError extends Error {
 export function parseErrorBody(body: string): string {
   if (!body) return "";
   try {
-    const j = JSON.parse(body);
-    if (typeof j === "string") return j;
-    if (j && typeof j === "object") {
-      const o = j as Record<string, unknown>;
-      const msg = o.message ?? o.error ?? o.detail ?? o.reason;
-      if (typeof msg === "string" && msg.length > 0) return msg;
+    const parsed = JSON.parse(body);
+    if (typeof parsed === "string") return parsed;
+    if (parsed && typeof parsed === "object") {
+      const value = parsed as Record<string, unknown>;
+      const message = value.message ?? value.error ?? value.detail ?? value.reason;
+      if (typeof message === "string" && message.length > 0) return message;
     }
   } catch {
-    // not JSON, fall through
+    // Plain-text error body.
   }
   return body.slice(0, 500);
 }
 
 export function classifyStatus(status: number, _method: string, path: string): string | undefined {
-  if (status === 401) {
-    return "Authentication failed. Check PARSEABLE_API_KEY.";
-  }
+  if (status === 401) return "Authentication failed. Check PARSEABLE_API_KEY.";
   if (status === 403) {
     return "Authorized but not permitted. The user lacks the required RBAC action for this endpoint.";
   }
   if (status === 404) {
     if (path.startsWith("/cluster/")) {
-      return "Cluster endpoints only exist on distributed Parseable deployments (query/coordinator mode). Standalone instances do not have /cluster/* routes.";
+      return "Cluster endpoints only exist on distributed Parseable deployments (query/coordinator mode).";
     }
-    if (path.startsWith("/prometheus/")) {
-      return "PromQL endpoints may require a Parseable build with the prometheus feature enabled. Verify your server version.";
-    }
-    return "Resource not found. Check the dataset name, alert ID, or other identifier in the path.";
+    return "Resource not found. Check the tool name or referenced resource.";
   }
-  if (status === 408 || status === 504) {
-    return "Server timed out. Try a shorter time window or smaller query.";
-  }
-  if (status === 429) {
-    return "Rate limited. Parseable defaults to 100 req/min/IP - back off and retry.";
-  }
-  if (status >= 500) {
-    return "Parseable returned a server error. Check Parseable logs; this is likely not a config issue on the MCP side.";
-  }
+  if (status === 408 || status === 504) return "Server timed out. Try again.";
+  if (status === 429) return "Rate limited. Back off and retry.";
+  if (status >= 500) return "Parseable returned a server error. Check Parseable logs.";
   return undefined;
 }
 
 export class ParseableClient {
-  private apiKey: string;
-  private url: string;
-  private queryTimeoutMs: number;
-  private tenantId?: string;
-  public readonly maxRows: number;
-  private onUnauthorized?: () => void;
+  public readonly apiKey: string;
+  public readonly baseUrl: string;
+  public readonly tenantId?: string;
+  private readonly queryTimeoutMs: number;
+  private readonly onUnauthorized?: () => void;
 
   constructor(opts: Config, hooks: { onUnauthorized?: () => void } = {}) {
-    this.url = opts.url.replace(/\/+$/, "");
+    this.baseUrl = opts.url.replace(/\/+$/, "");
     this.queryTimeoutMs = opts.queryTimeoutMs;
-    this.maxRows = opts.maxRows;
     this.apiKey = opts.apiKey;
     this.tenantId = opts.tenantId;
     this.onUnauthorized = hooks.onUnauthorized;
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-    opts: { basePath?: string; query?: Record<string, string> } = {},
-  ): Promise<T> {
-    const base = opts.basePath ?? "/api/v1";
-    const qs = opts.query ? `?${new URLSearchParams(opts.query).toString()}` : "";
-    const url = `${this.url}${base}${path}${qs}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.queryTimeoutMs);
+  private headers(): Record<string, string> {
+    return {
+      "X-API-Key": this.apiKey,
+      ...(this.tenantId ? { "x-p-tenant": this.tenantId } : {}),
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+  }
 
+  private async fetch(path: string, init: RequestInit): Promise<Response> {
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "X-API-Key": this.apiKey,
-          ...(this.tenantId ? { "x-p-tenant": this.tenantId } : {}),
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+      return await fetch(`${this.baseUrl}/api/prism/v1${path}`, {
+        ...init,
+        signal: AbortSignal.timeout(this.queryTimeoutMs),
       });
-
-      const text = await res.text();
-      if (!res.ok) {
-        if (res.status === 401) this.onUnauthorized?.();
-        const parsed = parseErrorBody(text);
-        const hint = classifyStatus(res.status, method, path);
-        const head = `Parseable ${method} ${path} → ${res.status} ${res.statusText}`;
-        const detail = parsed ? `\n${parsed}` : "";
-        const hintLine = hint ? `\nHint: ${hint}` : "";
-        throw new ParseableError(res.status, text, `${head}${detail}${hintLine}`, hint);
+    } catch (error) {
+      const cause = error as Error & { code?: string; cause?: { code?: string } };
+      if (cause.name === "TimeoutError" || cause.name === "AbortError") {
+        throw new Error(`Parseable request timed out after ${this.queryTimeoutMs}ms.`);
       }
-      if (!text) return undefined as T;
-      try {
-        return JSON.parse(text) as T;
-      } catch {
-        return text as unknown as T;
-      }
-    } catch (err) {
-      if (err instanceof ParseableError) throw err;
-      if ((err as Error).name === "AbortError") {
-        throw new Error(
-          `Parseable request timed out after ${this.queryTimeoutMs}ms: ${method} ${path}. Try a shorter time window or raise PARSEABLE_QUERY_TIMEOUT_MS.`,
-        );
-      }
-      const e = err as NodeJS.ErrnoException & { cause?: { code?: string } };
-      const code = e.code ?? e.cause?.code;
+      const code = cause.code ?? cause.cause?.code;
       if (code === "ECONNREFUSED") {
-        throw new Error(
-          `Connection refused to ${this.url}. Is Parseable running and reachable from this machine?`,
-        );
+        throw new Error(`Connection refused to ${this.baseUrl}. Is Parseable reachable?`);
       }
       if (code === "ENOTFOUND") {
-        throw new Error(`DNS lookup failed for ${this.url}. Check PARSEABLE_URL.`);
+        throw new Error(`DNS lookup failed for ${this.baseUrl}. Check PARSEABLE_URL.`);
       }
-      if (code === "CERT_HAS_EXPIRED" || code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE") {
-        throw new Error(
-          `TLS certificate problem talking to ${this.url}: ${code}. Use a trusted cert or http:// for local testing.`,
-        );
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeout);
+      throw error;
     }
   }
 
-  listDatasets() {
-    return this.request<unknown>("GET", "/logstream");
-  }
-
-  getDatasetSchema(name: string) {
-    return this.request<unknown>("GET", `/logstream/${encodeURIComponent(name)}/schema`);
-  }
-
-  getDatasetInfo(name: string) {
-    return this.request<unknown>("GET", `/logstream/${encodeURIComponent(name)}/info`);
-  }
-
-  getDatasetStats(name: string) {
-    return this.request<unknown>("GET", `/logstream/${encodeURIComponent(name)}/stats`);
-  }
-
-  query(payload: { query: string; startTime: string; endTime: string; sendNull?: boolean }) {
-    return this.request<unknown>("POST", "/query", payload);
-  }
-
-  promqlInstant(params: {
-    query: string;
-    stream: string;
-    time?: string;
-    timeout?: string;
-    limit?: string;
-    timestamp_format?: string;
-  }) {
-    return this.request<unknown>("GET", "/query", undefined, {
-      basePath: "/prometheus/api/v1",
-      query: this.stringMap(params),
+  async fetchToolRegistry(
+    etag?: string,
+  ): Promise<
+    | { notModified: true; maxAgeMs: number }
+    | { notModified: false; body: unknown; etag?: string; maxAgeMs: number }
+  > {
+    const { parseCacheMaxAge } = await import("./remote-tools.js");
+    const response = await this.fetch("/llm/tools/list", {
+      headers: { ...this.headers(), ...(etag ? { "If-None-Match": etag } : {}) },
     });
-  }
+    const maxAgeMs = parseCacheMaxAge(response.headers.get("cache-control"));
+    if (response.status === 304) return { notModified: true, maxAgeMs };
 
-  promqlRange(params: {
-    query: string;
-    stream: string;
-    start: string;
-    end: string;
-    step?: string;
-    timeout?: string;
-    limit?: string;
-    timestamp_format?: string;
-  }) {
-    return this.request<unknown>("GET", "/query_range", undefined, {
-      basePath: "/prometheus/api/v1",
-      query: this.stringMap(params),
-    });
-  }
-
-  listAlerts() {
-    return this.request<unknown>("GET", "/alerts");
-  }
-
-  listAlertTags() {
-    return this.request<unknown>("GET", "/alerts/list_tags");
-  }
-
-  getAlert(id: string) {
-    return this.request<unknown>("GET", `/alerts/${encodeURIComponent(id)}`);
-  }
-
-  createAlert(spec: unknown) {
-    return this.request<unknown>("POST", "/alerts", spec);
-  }
-
-  enableAlert(id: string) {
-    return this.request<unknown>("PATCH", `/alerts/${encodeURIComponent(id)}/enable`);
-  }
-
-  disableAlert(id: string) {
-    return this.request<unknown>("PATCH", `/alerts/${encodeURIComponent(id)}/disable`);
-  }
-
-  evaluateAlert(id: string) {
-    return this.request<unknown>("PUT", `/alerts/${encodeURIComponent(id)}/evaluate_alert`);
-  }
-
-  listTargets() {
-    return this.request<unknown>("GET", "/targets");
-  }
-
-  getTarget(id: string) {
-    return this.request<unknown>("GET", `/targets/${encodeURIComponent(id)}`);
-  }
-
-  createTarget(spec: unknown) {
-    return this.request<unknown>("POST", "/targets", spec);
-  }
-
-  about() {
-    return this.request<unknown>("GET", "/about");
-  }
-
-  liveness() {
-    return this.request<unknown>("GET", "/liveness");
-  }
-
-  readiness() {
-    return this.request<unknown>("GET", "/readiness");
-  }
-
-  listUsers() {
-    return this.request<unknown>("GET", "/user");
-  }
-
-  getUserRoles(userid: string) {
-    return this.request<unknown>("GET", `/user/${encodeURIComponent(userid)}/role`);
-  }
-
-  listRoles() {
-    return this.request<unknown>("GET", "/roles");
-  }
-
-  getRole(name: string) {
-    return this.request<unknown>("GET", `/role/${encodeURIComponent(name)}`);
-  }
-
-  getDefaultRole() {
-    return this.request<unknown>("GET", "/role/default");
-  }
-
-  getClusterInfo() {
-    return this.request<unknown>("GET", "/cluster/info");
-  }
-
-  getClusterMetrics() {
-    return this.request<unknown>("GET", "/cluster/metrics");
-  }
-
-  getRetention(dataset: string) {
-    return this.request<unknown>("GET", `/logstream/${encodeURIComponent(dataset)}/retention`);
-  }
-
-  private stringMap(o: Record<string, unknown>): Record<string, string> {
-    const out: Record<string, string> = {};
-    for (const [k, v] of Object.entries(o)) {
-      if (v !== undefined && v !== null) out[k] = String(v);
+    const text = await response.text();
+    if (!response.ok) {
+      if (response.status === 401) this.onUnauthorized?.();
+      throw this.responseError(response, "GET", "/llm/tools/list", text);
     }
-    return out;
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      throw new ParseableError(502, text, "Parseable tool registry returned invalid JSON.");
+    }
+    return {
+      notModified: false,
+      body,
+      etag: response.headers.get("etag") ?? undefined,
+      maxAgeMs,
+    };
+  }
+
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const response = await this.fetch("/llm/tools/call", {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ name, arguments: args }),
+    });
+    const text = await response.text();
+    if (response.status === 401) this.onUnauthorized?.();
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw this.responseError(response, "POST", "/llm/tools/call", text);
+    }
+  }
+
+  private responseError(response: Response, method: string, path: string, body: string) {
+    const parsed = parseErrorBody(body);
+    const hint = classifyStatus(response.status, method, path);
+    return new ParseableError(
+      response.status,
+      body,
+      `Parseable ${method} ${path} → ${response.status} ${response.statusText}${parsed ? `\n${parsed}` : ""}${hint ? `\nHint: ${hint}` : ""}`,
+      hint,
+    );
   }
 }
