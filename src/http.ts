@@ -6,15 +6,15 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { type Context, Hono } from "hono";
 import { AuthError, assertNotPrivateUrl, parseRequestAuth } from "./auth.js";
 import { buildMcpServer } from "./bootstrap.js";
-import { ParseableClient } from "./client.js";
+import { ParseableClient, ParseableError } from "./client.js";
 import { evictCloudRouting, resolveCloudRouting } from "./cloud.js";
 import type { Config } from "./config.js";
+import { getRemoteTools } from "./remote-tools.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, "ui");
 
 const DEFAULT_PORT = 8787;
-const DEFAULT_MAX_ROWS = 1000;
 const DEFAULT_QUERY_TIMEOUT_MS = 30_000;
 const HELP_TEXT = `Parseable MCP server
 
@@ -115,7 +115,6 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
   config: Config;
 }> {
   const auth = parseRequestAuth(reqHeaders);
-  const maxRows = Number(reqHeaders.get("X-Parseable-Max-Rows") ?? DEFAULT_MAX_ROWS);
   const queryTimeoutMs = Number(
     reqHeaders.get("X-Parseable-Query-Timeout-Ms") ?? DEFAULT_QUERY_TIMEOUT_MS,
   );
@@ -127,7 +126,6 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
       tenantId: routing.tenantId,
       mode: "cloud",
       apiKey: auth.apiKey,
-      maxRows,
       queryTimeoutMs,
     };
     return {
@@ -143,7 +141,6 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
     url: auth.url,
     apiKey: auth.apiKey,
     mode: "self-hosted",
-    maxRows,
     queryTimeoutMs,
   };
   return { client: new ParseableClient(config), config };
@@ -152,8 +149,9 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
 async function handleMcpPost(c: Context) {
   try {
     const built = await buildApiKeyClient(c.req.raw.headers);
+    await getRemoteTools(built.client);
 
-    const mcp = buildMcpServer({ client: built.client, config: built.config });
+    const mcp = buildMcpServer(built.client);
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -162,6 +160,12 @@ async function handleMcpPost(c: Context) {
     return await transport.handleRequest(c.req.raw);
   } catch (err) {
     if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: err.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (err instanceof ParseableError) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: err.status,
         headers: { "Content-Type": "application/json" },

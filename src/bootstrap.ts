@@ -1,59 +1,60 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ParseableError } from "./client.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import {
+  CallToolRequestSchema,
+  type CallToolResult,
+  CallToolResultSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import type { ParseableClient } from "./client.js";
 import { PARSEABLE_ICON_DATA_URI } from "./icon.js";
-import { tools } from "./tools/index.js";
-import type { ToolContext } from "./tools/types.js";
-import { errorResult, jsonResult } from "./tools/types.js";
+import { getRemoteTools } from "./remote-tools.js";
 
 const SERVER_VERSION = "0.2.16";
 
-export function buildMcpServer(ctx: ToolContext): McpServer {
-  const server = new McpServer({
-    name: "parseable-mcp-server",
-    title: "Parseable",
-    version: SERVER_VERSION,
-    description:
-      "Talk to Parseable from your AI client. Query logs (SQL + PromQL), manage alerts, audit RBAC.",
-    websiteUrl: "https://www.parseable.com",
-    icons: [
-      {
-        src: PARSEABLE_ICON_DATA_URI,
-        mimeType: "image/svg+xml",
-        sizes: ["any"],
-      },
-    ],
-  });
+function toolError(message: string): CallToolResult {
+  return { isError: true, content: [{ type: "text", text: message }] };
+}
 
-  for (const tool of tools) {
-    const handler = async (args: Record<string, unknown>) => {
-      try {
-        const data = await tool.handler(args, ctx);
-        return jsonResult(data);
-      } catch (err) {
-        if (err instanceof ParseableError) {
-          return errorResult(`${err.message}\n\nResponse body:\n${err.body}`);
-        }
-        return errorResult(err instanceof Error ? err.message : String(err));
+export function buildMcpServer(client: ParseableClient): Server {
+  const server = new Server(
+    {
+      name: "parseable-mcp-server",
+      title: "Parseable",
+      version: SERVER_VERSION,
+      description:
+        "Talk to Parseable from your AI client. Query logs (SQL + PromQL), manage alerts, audit RBAC.",
+      websiteUrl: "https://www.parseable.com",
+      icons: [
+        {
+          src: PARSEABLE_ICON_DATA_URI,
+          mimeType: "image/svg+xml",
+          sizes: ["any"],
+        },
+      ],
+    },
+    { capabilities: { tools: { listChanged: false } } },
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: await getRemoteTools(client),
+  }));
+
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    try {
+      const result = await client.callTool(request.params.name, request.params.arguments ?? {});
+      if (
+        !result ||
+        typeof result !== "object" ||
+        !("content" in result) ||
+        !Array.isArray(result.content)
+      ) {
+        throw new Error("Parseable tool invocation returned an invalid CallToolResult.");
       }
-    };
-
-    // Cast avoids deep generic instantiation across the dynamic tool list.
-    (
-      server.registerTool as unknown as (
-        n: string,
-        c: Record<string, unknown>,
-        cb: typeof handler,
-      ) => unknown
-    )(
-      tool.name,
-      {
-        title: tool.title,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-      },
-      handler,
-    );
-  }
+      return CallToolResultSchema.parse(result);
+    } catch (error) {
+      return toolError(error instanceof Error ? error.message : String(error));
+    }
+  });
 
   return server;
 }

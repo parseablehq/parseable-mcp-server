@@ -145,8 +145,6 @@ For self-hosted mode, HTTP server validates supplied URL and forwards API key to
 |-----|----------|---------|---------|
 | `PARSEABLE_URL` | ✅ | — | Parseable base URL |
 | `PARSEABLE_API_KEY` | ✅ | — | API key for self-hosted Parseable |
-| `PARSEABLE_DEFAULT_DATASET` | | — | Advisory default dataset |
-| `PARSEABLE_MAX_ROWS` | | 1000 | Hard cap on query rows |
 | `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP timeout (ms) |
 
 ### HTTP mode
@@ -178,67 +176,15 @@ Copy `.env.example` → `.env` for a full template.
 
 ## Tools
 
-### Discovery
+Tools are owned by the connected Parseable instance, not this adapter. For
+MCP `tools/list`, the adapter fetches the edition-specific catalog from
+`GET /api/prism/v1/llm/tools/list`. OSS, Enterprise, and Cloud can expose
+different tool sets.
 
-| Tool | Purpose |
-|------|---------|
-| `list_datasets` | List all log datasets |
-| `get_dataset_schema` | Column names + types |
-| `get_dataset_info` | Metadata (created_at, retention, time window) |
-| `get_dataset_stats` | Event count and storage bytes |
-| `sample_events` | Most recent N events (time-bounded, row-capped) |
-
-### Query
-
-| Tool | Purpose |
-|------|---------|
-| `query_sql` | SQL `SELECT` over a time window. DDL/DML blocked. Auto-injects `LIMIT`. |
-| `query_promql` | PromQL instant or range query against a metrics dataset |
-
-### Alerts
-
-| Tool | Purpose |
-|------|---------|
-| `list_alerts` | List all alerts with state, severity, tags |
-| `get_alert` | Full config for one alert |
-| `list_alert_tags` | All alert tags in use |
-| `enable_alert` | Enable an alert |
-| `disable_alert` | Disable an alert |
-| `evaluate_alert` | Force-evaluate now. **May fire real notifications.** |
-| `create_alert` | Create alert via guided Q&A (8 questions, confirms before submit) |
-
-### Alert targets
-
-| Tool | Purpose |
-|------|---------|
-| `list_alert_targets` | List targets (Slack, webhook, Alertmanager) |
-| `get_alert_target` | Full config for one target |
-| `create_alert_target` | Create a new Slack / webhook / Alertmanager target |
-
-### Diagnostics
-
-| Tool | Purpose |
-|------|---------|
-| `ping` | Check connectivity, return version + health |
-| `explain_query` | `EXPLAIN` a SQL query without executing it |
-
-### RBAC (read-only)
-
-| Tool | Purpose |
-|------|---------|
-| `list_users` | List all users |
-| `get_user_roles` | Roles for a specific user |
-| `list_roles` | All role names |
-| `get_role` | Privilege definition for a role |
-| `get_default_role` | Default role for new users |
-
-### Admin (read-only)
-
-| Tool | Purpose |
-|------|---------|
-| `get_cluster_status` | All nodes with status (distributed mode) |
-| `get_cluster_metrics` | Aggregated ingest/query/storage metrics |
-| `get_retention` | Retention policy for a dataset |
+The adapter caches the catalog for its server-provided `max-age` and
+revalidates it with `ETag`. MCP `tools/call` requests are forwarded to
+`POST /api/prism/v1/llm/tools/call`, where Parseable validates arguments,
+applies RBAC, executes the tool, and returns an MCP `CallToolResult`.
 
 ---
 
