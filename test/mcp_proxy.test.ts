@@ -48,6 +48,45 @@ describe("MCP remote tool proxy", () => {
     await server.close();
   });
 
+  it("exposes only core tools and blocks calls outside the core profile", async () => {
+    const tools = ["list_datasets", "get_dataset_schema", "query_sql", "create_alert"].map(
+      (name) => ({
+        name,
+        inputSchema: { type: "object" as const, properties: {} },
+      }),
+    );
+    const parseable = {
+      baseUrl: "https://parseable.example.com",
+      tenantId: undefined,
+      apiKey: "key",
+      fetchToolRegistry: vi.fn().mockResolvedValue({
+        notModified: false,
+        body: { tools },
+        maxAgeMs: 300_000,
+      }),
+      callTool: vi.fn(),
+    } as unknown as ParseableClient;
+
+    const server = buildMcpServer(parseable, "core");
+    const client = new Client({ name: "test-client", version: "1.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual([
+      "list_datasets",
+      "get_dataset_schema",
+      "query_sql",
+    ]);
+    expect(await client.callTool({ name: "create_alert", arguments: {} })).toMatchObject({
+      isError: true,
+      content: [{ text: expect.stringMatching(/not available in the core tool profile/) }],
+    });
+    expect(parseable.callTool).not.toHaveBeenCalled();
+
+    await client.close();
+    await server.close();
+  });
+
   it("converts invalid upstream results into MCP tool errors", async () => {
     const parseable = {
       baseUrl: "https://parseable.example.com",

@@ -93,6 +93,8 @@ docker run -p 8787:8787 --env-file .env parseable-mcp-server
 - URL: `https://mcp.your-domain.com/mcp`
 - Header `X-Parseable-URL`: `https://your-parseable.example.com`
 - Header `X-API-Key`: your Parseable API key
+- Optional header `X-Parseable-Tool-Profile`: `core` for only `list_datasets`,
+  `get_dataset_schema`, and `query_sql`; omit it or use `full` for every tool
 - Click Add → Connect
 
 ### 4. Connect from Claude Code
@@ -130,6 +132,12 @@ Each `POST /mcp` request requires `X-API-Key` and supports two modes:
 |------|---------|
 | Cloud | `X-Parseable-Mode: cloud`, `X-API-Key` |
 | Self-hosted (default) | `X-Parseable-URL`, `X-API-Key` |
+
+`X-Parseable-Tool-Profile` controls tools exposed by HTTP MCP discovery. `core`
+exposes only `list_datasets`, `get_dataset_schema`, and `query_sql`. `full`, or
+an omitted header, exposes every tool returned by Parseable. Unknown values are
+rejected with HTTP 400. The adapter applies the same profile to `tools/call`, so
+hidden tools cannot be invoked through a core-profile connection.
 
 `X-Parseable-Mode` is checked first when present. Omitting it selects self-hosted mode; clients do not need to send `X-Parseable-Mode: self-hosted`. In cloud mode, server validates API key with Parseable Cloud, caches returned URL and tenant routing in a bounded in-memory LRU for 24 hours, and sends `x-p-tenant` on Parseable requests. Cache is disposable; misses and process restarts resolve through Cloud again.
 
@@ -185,6 +193,8 @@ The adapter caches the catalog for its server-provided `max-age` and
 revalidates it with `ETag`. MCP `tools/call` requests are forwarded to
 `POST /api/prism/v1/llm/tools/call`, where Parseable validates arguments,
 applies RBAC, executes the tool, and returns an MCP `CallToolResult`.
+HTTP connections may filter this catalog locally with
+`X-Parseable-Tool-Profile`; Parseable remains owner of the full catalog.
 
 ---
 
