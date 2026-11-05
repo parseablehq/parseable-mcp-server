@@ -8,14 +8,15 @@ import {
 import type { ParseableClient } from "./client.js";
 import { PARSEABLE_ICON_DATA_URI } from "./icon.js";
 import { getRemoteTools } from "./remote-tools.js";
+import { filterToolsForProfile, type ToolProfile, toolAllowed } from "./tool-profile.js";
 
-const SERVER_VERSION = "0.2.16";
+const SERVER_VERSION = "0.3.2";
 
 function toolError(message: string): CallToolResult {
   return { isError: true, content: [{ type: "text", text: message }] };
 }
 
-export function buildMcpServer(client: ParseableClient): Server {
+export function buildMcpServer(client: ParseableClient, profile: ToolProfile = "full"): Server {
   const server = new Server(
     {
       name: "parseable-mcp-server",
@@ -36,11 +37,16 @@ export function buildMcpServer(client: ParseableClient): Server {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: await getRemoteTools(client),
+    tools: filterToolsForProfile(profile, await getRemoteTools(client)),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
+      if (!toolAllowed(profile, request.params.name)) {
+        return toolError(
+          `Tool ${request.params.name} is not available in the ${profile} tool profile.`,
+        );
+      }
       const result = await client.callTool(request.params.name, request.params.arguments ?? {});
       if (
         !result ||

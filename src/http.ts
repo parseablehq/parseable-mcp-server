@@ -10,6 +10,7 @@ import { ParseableClient, ParseableError } from "./client.js";
 import { evictCloudRouting, resolveCloudRouting } from "./cloud.js";
 import type { Config } from "./config.js";
 import { getRemoteTools } from "./remote-tools.js";
+import { parseToolProfile, TOOL_PROFILE_HEADER, ToolProfileError } from "./tool-profile.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UI_DIR = join(__dirname, "ui");
@@ -25,6 +26,9 @@ Required headers for static Parseable credentials:
   X-API-Key
   X-Parseable-Mode: cloud (cloud only; omitted means self-hosted)
   X-Parseable-URL (required when mode is omitted/self-hosted)
+
+Optional tool catalog profile:
+  X-Parseable-Tool-Profile: core | full (default: full)
 `;
 
 export const app = new Hono();
@@ -148,10 +152,11 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
 
 async function handleMcpPost(c: Context) {
   try {
+    const profile = parseToolProfile(c.req.raw.headers.get(TOOL_PROFILE_HEADER));
     const built = await buildApiKeyClient(c.req.raw.headers);
     await getRemoteTools(built.client);
 
-    const mcp = buildMcpServer(built.client);
+    const mcp = buildMcpServer(built.client, profile);
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -160,6 +165,12 @@ async function handleMcpPost(c: Context) {
     return await transport.handleRequest(c.req.raw);
   } catch (err) {
     if (err instanceof AuthError) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: err.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (err instanceof ToolProfileError) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: err.status,
         headers: { "Content-Type": "application/json" },

@@ -119,6 +119,19 @@ describe("HTTP routes", () => {
     );
     expect(res.status).toBe(400);
   });
+
+  it("POST /mcp with an invalid tool profile returns 400", async () => {
+    const res = await app.fetch(
+      mcpReq(initBody, {
+        ...goodHeaders,
+        "x-parseable-tool-profile": "minimal",
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: 'Invalid X-Parseable-Tool-Profile value "minimal". Expected "core" or "full".',
+    });
+  });
 });
 
 describe("HTTP /mcp with mocked upstream", () => {
@@ -147,6 +160,33 @@ describe("HTTP /mcp with mocked upstream", () => {
     const payload = JSON.parse((dataLine as string).slice(5).trim());
     expect(payload.result.serverInfo.title).toBe("Parseable");
     expect(payload.result.serverInfo.name).toBe("parseable-mcp-server");
+  });
+
+  it("wires the core profile header into MCP tools/list", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      Response.json({
+        tools: ["list_datasets", "get_dataset_schema", "query_sql", "create_alert"].map((name) => ({
+          name,
+          inputSchema: { type: "object", properties: {} },
+        })),
+      }),
+    );
+    const res = await app.fetch(
+      mcpReq(
+        { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} },
+        { ...goodHeaders, "x-parseable-tool-profile": "core" },
+      ),
+    );
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    const dataLine = text.split("\n").find((line) => line.startsWith("data:"));
+    expect(dataLine).toBeDefined();
+    const payload = JSON.parse((dataLine as string).slice(5).trim());
+    expect(payload.result.tools.map((tool: { name: string }) => tool.name)).toEqual([
+      "list_datasets",
+      "get_dataset_schema",
+      "query_sql",
+    ]);
   });
 
   it("rejects initialization when Parseable registry authentication fails", async () => {
