@@ -23,7 +23,7 @@ HTTP MCP endpoint:
   POST /mcp
 
 Required headers for static Parseable credentials:
-  X-API-Key
+  Authorization: Bearer <token>
   X-Parseable-Mode: cloud (cloud only; omitted means self-hosted)
   X-Parseable-URL (required when mode is omitted/self-hosted)
 

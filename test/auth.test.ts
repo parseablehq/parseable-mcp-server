@@ -3,14 +3,14 @@ import { AuthError, assertNotPrivateUrl, parseAuthHeaders, parseRequestAuth } fr
 
 const goodHeaders = {
   "x-parseable-url": "https://parseable.example.com",
-  "x-api-key": "secret",
+  authorization: "Bearer secret",
 };
 
 describe("parseAuthHeaders", () => {
   it("accepts a valid Headers instance", () => {
     const h = new Headers();
     h.set("X-Parseable-URL", "https://parseable.example.com");
-    h.set("X-API-Key", "secret");
+    h.set("Authorization", "Bearer secret");
     expect(parseAuthHeaders(h)).toEqual({
       url: "https://parseable.example.com",
       apiKey: "secret",
@@ -43,13 +43,13 @@ describe("parseAuthHeaders", () => {
     }
   });
 
-  it("throws 401 when X-API-Key missing", () => {
+  it("throws 401 when Authorization missing", () => {
     try {
-      parseAuthHeaders({ ...goodHeaders, "x-api-key": undefined });
+      parseAuthHeaders({ ...goodHeaders, authorization: undefined });
       throw new Error("should have thrown");
     } catch (err) {
       expect((err as AuthError).status).toBe(401);
-      expect((err as AuthError).message).toMatch(/X-API-Key/);
+      expect((err as AuthError).message).toMatch(/Authorization/);
     }
   });
 
@@ -60,7 +60,7 @@ describe("parseAuthHeaders", () => {
     } catch (err) {
       const msg = (err as AuthError).message;
       expect(msg).toMatch(/X-Parseable-URL/);
-      expect(msg).toMatch(/X-API-Key/);
+      expect(msg).toMatch(/Authorization/);
     }
   });
 
@@ -95,7 +95,9 @@ describe("parseRequestAuth", () => {
   });
 
   it("accepts cloud mode with only API key", () => {
-    expect(parseRequestAuth({ "x-parseable-mode": "cloud", "x-api-key": "secret" })).toEqual({
+    expect(
+      parseRequestAuth({ "x-parseable-mode": "cloud", authorization: "Bearer secret" }),
+    ).toEqual({
       mode: "cloud",
       apiKey: "secret",
     });
@@ -109,8 +111,14 @@ describe("parseRequestAuth", () => {
 
   it("requires URL when self-hosted mode is explicit", () => {
     expect(() =>
-      parseRequestAuth({ "x-parseable-mode": "self-hosted", "x-api-key": "secret" }),
+      parseRequestAuth({ "x-parseable-mode": "self-hosted", authorization: "Bearer secret" }),
     ).toThrow(/X-Parseable-URL/);
+  });
+
+  it("rejects non-Bearer authorization", () => {
+    expect(() => parseRequestAuth({ ...goodHeaders, authorization: "secret" })).toThrow(
+      /Bearer <token>/,
+    );
   });
 
   it("rejects unknown mode", () => {

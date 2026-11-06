@@ -135,7 +135,7 @@ export function mergeConfig(
               "--header",
               "X-Parseable-Mode:cloud",
               "--header",
-              `X-API-Key:\${PARSEABLE_API_KEY}`,
+              `Authorization:Bearer \${PARSEABLE_API_KEY}`,
               ...(toolProfile === "core" ? ["--header", "X-Parseable-Tool-Profile:core"] : []),
             ],
             {
@@ -147,7 +147,7 @@ export function mergeConfig(
             url: CLOUD_MCP_URL,
             headers: {
               "X-Parseable-Mode": "cloud",
-              "X-API-Key": creds.apiKey,
+              Authorization: `Bearer ${creds.apiKey}`,
               ...(toolProfile === "core" ? { "X-Parseable-Tool-Profile": "core" } : {}),
             },
           }

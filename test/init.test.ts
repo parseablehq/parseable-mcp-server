@@ -159,7 +159,7 @@ describe("mergeConfig", () => {
           url: "https://mcp.parseable.com/mcp",
           headers: {
             "X-Parseable-Mode": "cloud",
-            "X-API-Key": "cloud-key",
+            Authorization: "Bearer cloud-key",
           },
         },
       },
@@ -184,7 +184,7 @@ describe("mergeConfig", () => {
             "--header",
             "X-Parseable-Mode:cloud",
             "--header",
-            `X-API-Key:\${PARSEABLE_API_KEY}`,
+            `Authorization:Bearer \${PARSEABLE_API_KEY}`,
           ],
           env: { PARSEABLE_API_KEY: "cloud-key" },
         },
@@ -234,7 +234,7 @@ describe("mergeConfig", () => {
         "--header",
         "X-Parseable-Mode:cloud",
         "--header",
-        `X-API-Key:\${PARSEABLE_API_KEY}`,
+        `Authorization:Bearer \${PARSEABLE_API_KEY}`,
       ],
     });
   });

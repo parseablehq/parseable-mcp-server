@@ -33,12 +33,24 @@ export function header(
   return v;
 }
 
+function bearerToken(
+  headers: Headers | Record<string, string | string[] | undefined>,
+): string | undefined {
+  const authorization = header(headers, "Authorization");
+  if (!authorization) return undefined;
+  const match = /^Bearer\s+(\S+)$/i.exec(authorization);
+  if (!match) {
+    throw new AuthError(401, "Authorization header must use Bearer <token>.");
+  }
+  return match[1];
+}
+
 export function parseRequestAuth(
   headers: Headers | Record<string, string | string[] | undefined>,
 ): RequestAuth {
   const rawMode = header(headers, "X-Parseable-Mode");
   const url = header(headers, "X-Parseable-URL");
-  const apiKey = header(headers, "X-API-Key");
+  const apiKey = bearerToken(headers);
 
   // Mode is the primary selector. No mode means self-hosted for compatibility.
   const mode = rawMode ?? "self-hosted";
@@ -47,7 +59,7 @@ export function parseRequestAuth(
   }
 
   if (!apiKey) {
-    throw new AuthError(401, "Missing required header: X-API-Key.");
+    throw new AuthError(401, "Missing required header: Authorization: Bearer <token>.");
   }
 
   if (mode === "cloud") {
@@ -72,16 +84,16 @@ export function parseAuthHeaders(
   headers: Headers | Record<string, string | string[] | undefined>,
 ): RequestCreds {
   const url = header(headers, "X-Parseable-URL");
-  const apiKey = header(headers, "X-API-Key");
+  const apiKey = bearerToken(headers);
 
   const missing: string[] = [];
   if (!url) missing.push("X-Parseable-URL");
-  if (!apiKey) missing.push("X-API-Key");
+  if (!apiKey) missing.push("Authorization: Bearer <token>");
 
   if (missing.length) {
     throw new AuthError(
       401,
-      `Missing required header(s): ${missing.join(", ")}. Set X-Parseable-URL and X-API-Key on your MCP connector.`,
+      `Missing required header(s): ${missing.join(", ")}. Set X-Parseable-URL and Authorization: Bearer <token> on your MCP connector.`,
     );
   }
 

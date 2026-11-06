@@ -130,8 +130,8 @@ const API_KEY = "your-parseable-api-key";
 const INSTALL_COMMAND = "npx -y @parseable/parseable-mcp-server@latest init";
 function authHeaders(mode: ParseableMode) {
   return mode === "cloud"
-    ? { "X-Parseable-Mode": "cloud", "X-API-Key": API_KEY }
-    : { "X-Parseable-URL": PARSEABLE_URL, "X-API-Key": API_KEY };
+    ? { "X-Parseable-Mode": "cloud", Authorization: `Bearer ${API_KEY}` }
+    : { "X-Parseable-URL": PARSEABLE_URL, Authorization: `Bearer ${API_KEY}` };
 }
 
 function manualConfig(

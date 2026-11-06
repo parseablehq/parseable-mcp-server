@@ -93,7 +93,7 @@ docker run -p 8787:8787 --env-file .env parseable-mcp-server
 - Name: `Parseable`
 - URL: `https://mcp.your-domain.com/mcp`
 - Header `X-Parseable-URL`: `https://your-parseable.example.com`
-- Header `X-API-Key`: your Parseable API key
+- Header `Authorization`: `Bearer <your-Parseable-API-key>`
 - Optional header `X-Parseable-Tool-Profile`: `core` for only `list_datasets`,
   `get_dataset_schema`, and `query_sql`; omit it or use `full` for every tool
 - Click Add → Connect
@@ -103,7 +103,7 @@ docker run -p 8787:8787 --env-file .env parseable-mcp-server
 ```bash
 claude mcp add --transport http parseable https://mcp.your-domain.com/mcp --scope user \
   --header "X-Parseable-URL: https://your-parseable.example.com" \
-  --header "X-API-Key: $PARSEABLE_API_KEY"
+  --header "Authorization: Bearer $PARSEABLE_API_KEY"
 ```
 
 ### 5. Connect from Cursor / VS Code
@@ -116,7 +116,7 @@ claude mcp add --transport http parseable https://mcp.your-domain.com/mcp --scop
       "url": "https://mcp.your-domain.com/mcp",
       "headers": {
         "X-Parseable-URL": "https://your-parseable.example.com",
-        "X-API-Key": "your-parseable-api-key"
+        "Authorization": "Bearer your-parseable-api-key"
       }
     }
   }
@@ -127,12 +127,12 @@ claude mcp add --transport http parseable https://mcp.your-domain.com/mcp --scop
 
 ## HTTP authentication
 
-Each `POST /mcp` request requires `X-API-Key` and supports two modes:
+Each `POST /mcp` request requires `Authorization: Bearer <token>` and supports two modes:
 
 | Mode | Headers |
 |------|---------|
-| Cloud | `X-Parseable-Mode: cloud`, `X-API-Key` |
-| Self-hosted (default) | `X-Parseable-URL`, `X-API-Key` |
+| Cloud | `X-Parseable-Mode: cloud`, `Authorization: Bearer <token>` |
+| Self-hosted (default) | `X-Parseable-URL`, `Authorization: Bearer <token>` |
 
 `X-Parseable-Tool-Profile` controls tools exposed by HTTP MCP discovery. `core`
 exposes only `list_datasets`, `get_dataset_schema`, and `query_sql`. `full`, or
@@ -164,7 +164,6 @@ For self-hosted mode, HTTP server validates supplied URL and forwards API key to
 | `PORT` | | 8787 | HTTP listen port |
 | `PARSEABLE_MCP_ALLOW_PRIVATE` | | false | Permit private/loopback Parseable URLs supplied in request headers |
 | `PARSEABLE_ORCHESTRATOR_URL` | Cloud only | - | Parseable Cloud orchestrator base URL |
-| `PARSEABLE_CLOUD_AUTH_TOKEN` | Cloud only | - | Service bearer token for API-key validation |
 | `PARSEABLE_CLOUD_CACHE_TTL_SECONDS` | | 86400 | Cloud routing LRU TTL |
 | `PARSEABLE_CLOUD_CACHE_MAX_ENTRIES` | | 10000 | Maximum cached cloud API-key routes |
 | `PARSEABLE_CLOUD_VALIDATE_TIMEOUT_MS` | | 10000 | Cloud validation timeout |
@@ -303,7 +302,7 @@ CI (GitHub Actions) runs lint + `build:all` + test on every push/PR to `main` on
 ## Security
 
 - Parseable API keys live in MCP client configuration. Use keys scoped to minimum required permissions.
-- HTTP clients send credentials in `X-Parseable-URL` and `X-API-Key`; always use HTTPS for remote deployments.
+- HTTP clients send the instance in `X-Parseable-URL` and credentials in `Authorization: Bearer <token>`; always use HTTPS for remote deployments.
 - `query_sql` blocks DDL/DML and enforces a row `LIMIT`. Time window is mandatory.
 - `evaluate_alert` can fire real notifications — review the call before approving.
 - No telemetry. Outbound calls go only to the Parseable instance configured by the user.

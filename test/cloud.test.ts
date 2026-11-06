@@ -23,7 +23,6 @@ describe("cloud API-key resolver", () => {
   beforeEach(() => {
     clearCloudRoutingCache();
     process.env.PARSEABLE_ORCHESTRATOR_URL = "https://cloud.example.com/";
-    process.env.PARSEABLE_CLOUD_AUTH_TOKEN = "service-token";
     process.env.PARSEABLE_CLOUD_CACHE_TTL_SECONDS = "86400";
     globalThis.fetch = vi.fn().mockImplementation(async () => Response.json(response));
   });
@@ -35,7 +34,7 @@ describe("cloud API-key resolver", () => {
     vi.restoreAllMocks();
   });
 
-  it("calls validation endpoint with service bearer and user API key", async () => {
+  it("calls validation endpoint with API key as bearer token", async () => {
     const routing = await resolveCloudRouting("user-key");
     expect(routing).toMatchObject({
       url: "https://query.example.com",
@@ -43,8 +42,7 @@ describe("cloud API-key resolver", () => {
     });
     const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toBe("https://cloud.example.com/api/v1/cli/apikey/validate");
-    expect(init.headers.Authorization).toBe("Bearer service-token");
-    expect(init.headers["X-API-Key"]).toBe("user-key");
+    expect(init.headers.Authorization).toBe("Bearer user-key");
   });
 
   it("serves repeated lookups from LRU cache", async () => {
@@ -95,7 +93,7 @@ describe("cloud API-key resolver", () => {
   });
 
   it("fails with 503 when cloud server configuration is absent", async () => {
-    delete process.env.PARSEABLE_CLOUD_AUTH_TOKEN;
+    delete process.env.PARSEABLE_ORCHESTRATOR_URL;
     await expect(resolveCloudRouting("user-key")).rejects.toMatchObject({ status: 503 });
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
