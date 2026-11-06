@@ -215,8 +215,8 @@ export function TwoWays() {
   const { copied, copy } = useCopy();
   const hostedHeaders =
     remoteMode === "cloud"
-      ? `X-Parseable-Mode: cloud\nX-API-Key: ${API_KEY}`
-      : `X-Parseable-URL: ${PARSEABLE_URL}\nX-API-Key: ${API_KEY}`;
+      ? `X-Parseable-Mode: cloud\nAuthorization: Bearer ${API_KEY}`
+      : `X-Parseable-URL: ${PARSEABLE_URL}\nAuthorization: Bearer ${API_KEY}`;
   const hostedCommand = `claude mcp add --transport http parseable ${HOSTED_URL} --scope user ${hostedHeaders
     .split("\n")
     .map((header) => `--header "${header}"`)

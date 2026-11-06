@@ -34,7 +34,7 @@ const FEATURES = [
     iconColor: "#059669",
     iconBg: "rgba(5,150,105,0.08)",
     title: "Direct API key authentication",
-    desc: "Connects to your Parseable instance using its URL and API key headers. No OAuth flow or separate account required.",
+    desc: "Connects to your Parseable instance using its URL and API key as a Bearer token. No OAuth flow or separate account required.",
   },
   {
     icon: <IconEye size={20} stroke={1.5} aria-hidden="true" />,

@@ -38,10 +38,9 @@ export function cloudCacheKey(apiKey: string): string {
   return createHash("sha256").update(apiKey).digest("hex");
 }
 
-function requiredCloudConfig(): { baseUrl: string; authToken: string; timeoutMs: number } {
+function requiredCloudConfig(): { baseUrl: string; timeoutMs: number } {
   const baseUrl = process.env.PARSEABLE_ORCHESTRATOR_URL?.replace(/\/+$/, "");
-  const authToken = process.env.PARSEABLE_CLOUD_AUTH_TOKEN;
-  if (!baseUrl || !authToken) {
+  if (!baseUrl) {
     throw new AuthError(503, "Parseable Cloud authentication is not configured.");
   }
   let parsed: URL;
@@ -55,7 +54,6 @@ function requiredCloudConfig(): { baseUrl: string; authToken: string; timeoutMs:
   }
   return {
     baseUrl,
-    authToken,
     timeoutMs: positiveInt(process.env.PARSEABLE_CLOUD_VALIDATE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
   };
 }
@@ -68,13 +66,12 @@ function requiredString(value: unknown, field: string): string {
 }
 
 async function fetchCloudRouting(apiKey: string): Promise<CloudRouting> {
-  const { baseUrl, authToken, timeoutMs } = requiredCloudConfig();
+  const { baseUrl, timeoutMs } = requiredCloudConfig();
   let response: Response;
   try {
     response = await fetch(`${baseUrl}/api/v1/cli/apikey/validate`, {
       headers: {
-        Authorization: `Bearer ${authToken}`,
-        "X-API-Key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
         Accept: "application/json",
       },
       signal: AbortSignal.timeout(timeoutMs),

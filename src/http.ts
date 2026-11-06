@@ -23,7 +23,7 @@ HTTP MCP endpoint:
   POST /mcp
 
 Required headers for static Parseable credentials:
-  X-API-Key
+  Authorization: Bearer <token>
   X-Parseable-Mode: cloud (cloud only; omitted means self-hosted)
   X-Parseable-URL (required when mode is omitted/self-hosted)
 
@@ -131,6 +131,7 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
       mode: "cloud",
       apiKey: auth.apiKey,
       queryTimeoutMs,
+      toolProfile: "full",
     };
     return {
       client: new ParseableClient(config, {
@@ -146,6 +147,7 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
     apiKey: auth.apiKey,
     mode: "self-hosted",
     queryTimeoutMs,
+    toolProfile: "full",
   };
   return { client: new ParseableClient(config), config };
 }

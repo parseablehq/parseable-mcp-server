@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { parseToolProfile, type ToolProfile } from "./tool-profile.js";
 
 export interface Config {
   url: string;
@@ -6,6 +7,7 @@ export interface Config {
   tenantId?: string;
   mode?: "cloud" | "self-hosted";
   queryTimeoutMs: number;
+  toolProfile: ToolProfile;
 }
 
 function required(name: string): string {
@@ -19,5 +21,6 @@ export function loadConfig(): Config {
     url: required("PARSEABLE_URL").replace(/\/+$/, ""),
     apiKey: required("PARSEABLE_API_KEY"),
     queryTimeoutMs: Number(process.env.PARSEABLE_QUERY_TIMEOUT_MS ?? 30000),
+    toolProfile: parseToolProfile(process.env.PARSEABLE_TOOL_PROFILE),
   };
 }

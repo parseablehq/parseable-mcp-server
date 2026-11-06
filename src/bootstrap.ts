@@ -10,7 +10,7 @@ import { PARSEABLE_ICON_DATA_URI } from "./icon.js";
 import { getRemoteTools } from "./remote-tools.js";
 import { filterToolsForProfile, type ToolProfile, toolAllowed } from "./tool-profile.js";
 
-const SERVER_VERSION = "0.3.2";
+const SERVER_VERSION = "0.3.3";
 
 function toolError(message: string): CallToolResult {
   return { isError: true, content: [{ type: "text", text: message }] };

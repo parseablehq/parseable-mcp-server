@@ -39,7 +39,7 @@ describe("ParseableClient tool APIs", () => {
       "https://parseable.example.com/api/prism/v1/llm/tools/list",
       expect.objectContaining({
         headers: expect.objectContaining({
-          "X-API-Key": "secret",
+          Authorization: "Bearer secret",
           "x-p-tenant": "tenant-1",
           "If-None-Match": '"old"',
         }),

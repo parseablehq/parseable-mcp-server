@@ -62,7 +62,7 @@ export class ParseableClient {
 
   private headers(): Record<string, string> {
     return {
-      "X-API-Key": this.apiKey,
+      Authorization: `Bearer ${this.apiKey}`,
       ...(this.tenantId ? { "x-p-tenant": this.tenantId } : {}),
       "Content-Type": "application/json",
       Accept: "application/json",
