@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 import inquirer from "inquirer";
+import { parseToolProfile, type ToolProfile } from "./tool-profile.js";
 
 export interface ClientTarget {
   id: string;
@@ -16,6 +17,7 @@ export interface InitArgs {
   url?: string;
   apiKey?: string;
   client?: string;
+  toolProfile?: ToolProfile;
 }
 
 export type ParseableMode = "cloud" | "self-hosted";
@@ -96,6 +98,15 @@ export function parseInitArgs(argv: string[]): InitArgs {
     } else if (a === "--url" && argv[i + 1]) args.url = argv[++i];
     else if (a === "--api-key" && argv[i + 1]) args.apiKey = argv[++i];
     else if (a === "--client" && argv[i + 1]) args.client = argv[++i];
+    else if (a === "--tool-profile") {
+      const value = argv[++i];
+      if (!value) throw new Error('--tool-profile must be either "core" or "full"');
+      try {
+        args.toolProfile = parseToolProfile(value);
+      } catch {
+        throw new Error('--tool-profile must be either "core" or "full"');
+      }
+    }
   }
   return args;
 }
@@ -106,6 +117,7 @@ export function mergeConfig(
   creds: InitCredentials,
   clientId?: string,
   plat: string = platform(),
+  toolProfile: ToolProfile = "full",
 ): Record<string, unknown> {
   const stdioEntry = (args: string[], env: Record<string, string>) =>
     plat === "win32"
@@ -124,6 +136,7 @@ export function mergeConfig(
               "X-Parseable-Mode:cloud",
               "--header",
               `X-API-Key:\${PARSEABLE_API_KEY}`,
+              ...(toolProfile === "core" ? ["--header", "X-Parseable-Tool-Profile:core"] : []),
             ],
             {
               PARSEABLE_API_KEY: creds.apiKey,
@@ -135,11 +148,13 @@ export function mergeConfig(
             headers: {
               "X-Parseable-Mode": "cloud",
               "X-API-Key": creds.apiKey,
+              ...(toolProfile === "core" ? { "X-Parseable-Tool-Profile": "core" } : {}),
             },
           }
       : stdioEntry(["-y", "@parseable/parseable-mcp-server"], {
           PARSEABLE_URL: creds.url,
           PARSEABLE_API_KEY: creds.apiKey,
+          ...(toolProfile === "core" ? { PARSEABLE_TOOL_PROFILE: "core" } : {}),
         });
 
   const servers = (existing[configKey] as Record<string, unknown>) ?? {};
@@ -147,7 +162,11 @@ export function mergeConfig(
   return { ...existing, [configKey]: servers };
 }
 
-export function writeClientConfig(target: ClientTarget, creds: InitCredentials): void {
+export function writeClientConfig(
+  target: ClientTarget,
+  creds: InitCredentials,
+  toolProfile: ToolProfile = "full",
+): void {
   let existing: Record<string, unknown> = {};
   if (existsSync(target.configPath)) {
     try {
@@ -165,7 +184,14 @@ export function writeClientConfig(target: ClientTarget, creds: InitCredentials):
     mkdirSync(dirname(target.configPath), { recursive: true });
   }
 
-  const merged = mergeConfig(existing, target.configKey, creds, target.id, target.platform);
+  const merged = mergeConfig(
+    existing,
+    target.configKey,
+    creds,
+    target.id,
+    target.platform,
+    toolProfile,
+  );
   writeFileSync(target.configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 }
 
@@ -248,7 +274,7 @@ export async function runInit(argv: string[] = process.argv.slice(3)): Promise<v
 
   // 3. Write
   try {
-    writeClientConfig(selectedTarget, creds);
+    writeClientConfig(selectedTarget, creds, args.toolProfile ?? "full");
     console.log(
       `\n✓ Configuration saved to ${selectedTarget.configPath} for ${selectedTarget.name}`,
     );

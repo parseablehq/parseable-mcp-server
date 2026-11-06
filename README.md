@@ -27,7 +27,8 @@ Scripted:
 npx -y @parseable/parseable-mcp-server init \
   --client claude-desktop \
   --url https://your-parseable.example.com \
-  --api-key "$PARSEABLE_API_KEY"
+      --api-key "$PARSEABLE_API_KEY" \
+      --tool-profile core
 ```
 
 Supported `--client` values: `claude-desktop`, `cursor`.
@@ -154,6 +155,7 @@ For self-hosted mode, HTTP server validates supplied URL and forwards API key to
 | `PARSEABLE_URL` | ✅ | — | Parseable base URL |
 | `PARSEABLE_API_KEY` | ✅ | — | API key for self-hosted Parseable |
 | `PARSEABLE_QUERY_TIMEOUT_MS` | | 30000 | HTTP timeout (ms) |
+| `PARSEABLE_TOOL_PROFILE` | | full | Tool catalog profile: `core` or `full` |
 
 ### HTTP mode
 

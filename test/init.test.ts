@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { getClientTargets, mergeConfig, parseInitArgs, writeClientConfig } from "../src/init.js";
 
 describe("parseInitArgs", () => {
-  it("parses --mode --url --api-key --client", () => {
+  it("parses --mode --url --api-key --client --tool-profile", () => {
     const a = parseInitArgs([
       "--mode",
       "self-hosted",
@@ -15,12 +15,15 @@ describe("parseInitArgs", () => {
       "key",
       "--client",
       "cursor",
+      "--tool-profile",
+      "core",
     ]);
     expect(a).toEqual({
       mode: "self-hosted",
       url: "http://x",
       apiKey: "key",
       client: "cursor",
+      toolProfile: "core",
     });
   });
 
@@ -45,6 +48,18 @@ describe("parseInitArgs", () => {
   it("rejects mode without a value", () => {
     expect(() => parseInitArgs(["--mode"])).toThrow(
       '--mode must be either "cloud" or "self-hosted"',
+    );
+  });
+
+  it("rejects an invalid tool profile", () => {
+    expect(() => parseInitArgs(["--tool-profile", "minimal"])).toThrow(
+      '--tool-profile must be either "core" or "full"',
+    );
+  });
+
+  it("rejects tool profile without a value", () => {
+    expect(() => parseInitArgs(["--tool-profile"])).toThrow(
+      '--tool-profile must be either "core" or "full"',
     );
   });
 });
@@ -121,6 +136,14 @@ describe("mergeConfig", () => {
     });
   });
 
+  it("writes the core profile into a self-hosted stdio environment", () => {
+    const merged = mergeConfig({}, "mcpServers", creds, "claude-desktop", "darwin", "core");
+    const servers = merged.mcpServers as Record<string, unknown>;
+    expect(servers.Parseable).toMatchObject({
+      env: { PARSEABLE_TOOL_PROFILE: "core" },
+    });
+  });
+
   it("adds Parseable entry under servers for VS Code", () => {
     const merged = mergeConfig({}, "servers", creds);
     expect(merged.servers).toBeDefined();
@@ -167,6 +190,19 @@ describe("mergeConfig", () => {
         },
       },
     });
+  });
+
+  it("adds the core profile header to cloud configurations", () => {
+    const merged = mergeConfig(
+      {},
+      "mcpServers",
+      { mode: "cloud", apiKey: "cloud-key" },
+      "claude-desktop",
+      "darwin",
+      "core",
+    );
+    const servers = merged.mcpServers as Record<string, { args: string[] }>;
+    expect(servers.Parseable.args).toContain("X-Parseable-Tool-Profile:core");
   });
 
   it("wraps self-hosted npx with cmd on Windows", () => {

@@ -131,6 +131,7 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
       mode: "cloud",
       apiKey: auth.apiKey,
       queryTimeoutMs,
+      toolProfile: "full",
     };
     return {
       client: new ParseableClient(config, {
@@ -146,6 +147,7 @@ async function buildApiKeyClient(reqHeaders: Headers): Promise<{
     apiKey: auth.apiKey,
     mode: "self-hosted",
     queryTimeoutMs,
+    toolProfile: "full",
   };
   return { client: new ParseableClient(config), config };
 }

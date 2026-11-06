@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
 
-const KEYS = ["PARSEABLE_URL", "PARSEABLE_API_KEY", "PARSEABLE_QUERY_TIMEOUT_MS"];
+const KEYS = [
+  "PARSEABLE_URL",
+  "PARSEABLE_API_KEY",
+  "PARSEABLE_QUERY_TIMEOUT_MS",
+  "PARSEABLE_TOOL_PROFILE",
+];
 
 const saved: Record<string, string | undefined> = {};
 
@@ -41,5 +46,26 @@ describe("loadConfig", () => {
     delete process.env.PARSEABLE_QUERY_TIMEOUT_MS;
     const c = loadConfig();
     expect(c.queryTimeoutMs).toBe(30000);
+  });
+
+  it("loads the core tool profile", () => {
+    process.env.PARSEABLE_URL = "http://x";
+    process.env.PARSEABLE_API_KEY = "key";
+    process.env.PARSEABLE_TOOL_PROFILE = "core";
+    expect(loadConfig().toolProfile).toBe("core");
+  });
+
+  it("defaults the tool profile to full", () => {
+    process.env.PARSEABLE_URL = "http://x";
+    process.env.PARSEABLE_API_KEY = "key";
+    delete process.env.PARSEABLE_TOOL_PROFILE;
+    expect(loadConfig().toolProfile).toBe("full");
+  });
+
+  it("rejects an invalid tool profile", () => {
+    process.env.PARSEABLE_URL = "http://x";
+    process.env.PARSEABLE_API_KEY = "key";
+    process.env.PARSEABLE_TOOL_PROFILE = "minimal";
+    expect(() => loadConfig()).toThrow(/Expected "core" or "full"/);
   });
 });
