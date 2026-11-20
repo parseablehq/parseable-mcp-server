@@ -54,6 +54,107 @@ function cacheKey(client: ParseableClient): string {
   return createHash("sha256").update(identity).digest("hex");
 }
 
+function isSchema(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function schemaList(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isSchema) : [];
+}
+
+function requiredFields(schema: Record<string, unknown>): string[] {
+  return Array.isArray(schema.required)
+    ? schema.required.filter((field): field is string => typeof field === "string")
+    : [];
+}
+
+function mergeProperty(
+  existing: unknown,
+  incoming: unknown,
+  combinator: "anyOf" | "allOf",
+): unknown {
+  if (existing === undefined || JSON.stringify(existing) === JSON.stringify(incoming)) {
+    return incoming;
+  }
+  const alternatives =
+    isSchema(existing) && Object.keys(existing).length === 1 && Array.isArray(existing[combinator])
+      ? [...(existing[combinator] as unknown[])]
+      : [existing];
+  if (!alternatives.some((value) => JSON.stringify(value) === JSON.stringify(incoming))) {
+    alternatives.push(incoming);
+  }
+  return { [combinator]: alternatives };
+}
+
+/**
+ * Keep advertised MCP tools compatible with function-calling providers that
+ * require an object root and reject top-level JSON Schema combinators.
+ */
+export function normalizeInputSchema(input: RemoteTool["inputSchema"]): RemoteTool["inputSchema"] {
+  const source = input as Record<string, unknown>;
+  const unionBranches = [...schemaList(source.oneOf), ...schemaList(source.anyOf)].map((branch) =>
+    normalizeInputSchema(branch as RemoteTool["inputSchema"]),
+  );
+  const intersectionBranches = schemaList(source.allOf).map((branch) =>
+    normalizeInputSchema(branch as RemoteTool["inputSchema"]),
+  );
+  if (unionBranches.length === 0 && intersectionBranches.length === 0) return input;
+
+  const properties: Record<string, unknown> = isSchema(source.properties)
+    ? { ...source.properties }
+    : {};
+
+  const unionProperties: Record<string, unknown> = {};
+  for (const branch of unionBranches) {
+    const branchProperties = isSchema(branch.properties) ? branch.properties : {};
+    for (const [name, propertySchema] of Object.entries(branchProperties)) {
+      unionProperties[name] = mergeProperty(unionProperties[name], propertySchema, "anyOf");
+    }
+  }
+  for (const [name, propertySchema] of Object.entries(unionProperties)) {
+    properties[name] = mergeProperty(properties[name], propertySchema, "allOf");
+  }
+
+  for (const branch of intersectionBranches) {
+    const branchProperties = isSchema(branch.properties) ? branch.properties : {};
+    for (const [name, propertySchema] of Object.entries(branchProperties)) {
+      properties[name] = mergeProperty(properties[name], propertySchema, "allOf");
+    }
+  }
+
+  const required = new Set(requiredFields(source));
+  for (const branch of intersectionBranches) {
+    for (const field of requiredFields(branch)) required.add(field);
+  }
+  if (unionBranches.length > 0) {
+    const common = new Set(requiredFields(unionBranches[0]));
+    for (const branch of unionBranches.slice(1)) {
+      const branchRequired = new Set(requiredFields(branch));
+      for (const field of common) {
+        if (!branchRequired.has(field)) common.delete(field);
+      }
+    }
+    for (const field of common) required.add(field);
+  }
+
+  const {
+    oneOf: _oneOf,
+    anyOf: _anyOf,
+    allOf: _allOf,
+    enum: _enum,
+    const: _const,
+    not: _not,
+    required: _required,
+    ...base
+  } = source;
+  return {
+    ...base,
+    type: "object",
+    properties,
+    ...(required.size > 0 ? { required: [...required] } : {}),
+  } as RemoteTool["inputSchema"];
+}
+
 function validateTool(value: unknown): RemoteTool {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Parseable tool registry contains a non-object tool.");
@@ -70,7 +171,8 @@ function validateTool(value: unknown): RemoteTool {
   ) {
     throw new Error(`Parseable tool ${tool.name} has an invalid inputSchema.`);
   }
-  return tool as unknown as RemoteTool;
+  const validated = tool as unknown as RemoteTool;
+  return { ...validated, inputSchema: normalizeInputSchema(validated.inputSchema) };
 }
 
 function validateRegistry(value: unknown): RemoteTool[] {
