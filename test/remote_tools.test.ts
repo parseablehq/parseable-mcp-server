@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ParseableClient } from "../src/client.js";
-import { clearToolRegistryCache, getRemoteTools, parseCacheMaxAge } from "../src/remote-tools.js";
+import {
+  clearToolRegistryCache,
+  getRemoteTools,
+  normalizeInputSchema,
+  parseCacheMaxAge,
+} from "../src/remote-tools.js";
 
 function mockClient(fetchToolRegistry: ReturnType<typeof vi.fn>, apiKey = "key") {
   return {
@@ -28,6 +33,51 @@ afterEach(() => {
 });
 
 describe("remote tool registry", () => {
+  it("normalizes top-level unions for function-calling providers", () => {
+    expect(
+      normalizeInputSchema({
+        type: "object",
+        anyOf: [
+          {
+            type: "object",
+            properties: { dataset: { type: "string" }, query: { type: "string" } },
+            required: ["dataset", "query"],
+          },
+          {
+            type: "object",
+            properties: { dataset: { type: "string" }, trace_id: { type: "string" } },
+            required: ["dataset", "trace_id"],
+          },
+        ],
+      }),
+    ).toEqual({
+      type: "object",
+      properties: {
+        dataset: { type: "string" },
+        query: { type: "string" },
+        trace_id: { type: "string" },
+      },
+      required: ["dataset"],
+    });
+  });
+
+  it("keeps conflicting union field types below the object root", () => {
+    expect(
+      normalizeInputSchema({
+        type: "object",
+        oneOf: [
+          { type: "object", properties: { limit: { type: "integer" } } },
+          { type: "object", properties: { limit: { type: "string" } } },
+        ],
+      }),
+    ).toEqual({
+      type: "object",
+      properties: {
+        limit: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      },
+    });
+  });
+
   it("validates and caches registry per credential scope", async () => {
     const fetchRegistry = vi.fn().mockResolvedValue({
       notModified: false,
