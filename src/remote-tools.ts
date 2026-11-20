@@ -77,7 +77,7 @@ function mergeProperty(
     return incoming;
   }
   const alternatives =
-    isSchema(existing) && Array.isArray(existing[combinator])
+    isSchema(existing) && Object.keys(existing).length === 1 && Array.isArray(existing[combinator])
       ? [...(existing[combinator] as unknown[])]
       : [existing];
   if (!alternatives.some((value) => JSON.stringify(value) === JSON.stringify(incoming))) {

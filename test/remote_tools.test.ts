@@ -144,6 +144,41 @@ describe("remote tool registry", () => {
     });
   });
 
+  it("keeps sibling constraints when extending a property that already has allOf", () => {
+    expect(
+      normalizeInputSchema({
+        type: "object",
+        properties: {
+          limit: {
+            type: "integer",
+            minimum: 0,
+            allOf: [{ maximum: 100 }],
+          },
+        },
+        allOf: [
+          {
+            type: "object",
+            properties: { limit: { multipleOf: 2 } },
+          },
+        ],
+      }),
+    ).toEqual({
+      type: "object",
+      properties: {
+        limit: {
+          allOf: [
+            {
+              type: "integer",
+              minimum: 0,
+              allOf: [{ maximum: 100 }],
+            },
+            { multipleOf: 2 },
+          ],
+        },
+      },
+    });
+  });
+
   it("validates and caches registry per credential scope", async () => {
     const fetchRegistry = vi.fn().mockResolvedValue({
       notModified: false,
