@@ -68,16 +68,22 @@ function requiredFields(schema: Record<string, unknown>): string[] {
     : [];
 }
 
-function mergeProperty(existing: unknown, incoming: unknown): unknown {
+function mergeProperty(
+  existing: unknown,
+  incoming: unknown,
+  combinator: "anyOf" | "allOf",
+): unknown {
   if (existing === undefined || JSON.stringify(existing) === JSON.stringify(incoming)) {
     return incoming;
   }
   const alternatives =
-    isSchema(existing) && Array.isArray(existing.anyOf) ? [...existing.anyOf] : [existing];
+    isSchema(existing) && Array.isArray(existing[combinator])
+      ? [...(existing[combinator] as unknown[])]
+      : [existing];
   if (!alternatives.some((value) => JSON.stringify(value) === JSON.stringify(incoming))) {
     alternatives.push(incoming);
   }
-  return { anyOf: alternatives };
+  return { [combinator]: alternatives };
 }
 
 /**
@@ -86,17 +92,33 @@ function mergeProperty(existing: unknown, incoming: unknown): unknown {
  */
 export function normalizeInputSchema(input: RemoteTool["inputSchema"]): RemoteTool["inputSchema"] {
   const source = input as Record<string, unknown>;
-  const unionBranches = [...schemaList(source.oneOf), ...schemaList(source.anyOf)];
-  const intersectionBranches = schemaList(source.allOf);
+  const unionBranches = [...schemaList(source.oneOf), ...schemaList(source.anyOf)].map((branch) =>
+    normalizeInputSchema(branch as RemoteTool["inputSchema"]),
+  );
+  const intersectionBranches = schemaList(source.allOf).map((branch) =>
+    normalizeInputSchema(branch as RemoteTool["inputSchema"]),
+  );
   if (unionBranches.length === 0 && intersectionBranches.length === 0) return input;
 
   const properties: Record<string, unknown> = isSchema(source.properties)
     ? { ...source.properties }
     : {};
-  for (const branch of [...unionBranches, ...intersectionBranches]) {
+
+  const unionProperties: Record<string, unknown> = {};
+  for (const branch of unionBranches) {
     const branchProperties = isSchema(branch.properties) ? branch.properties : {};
     for (const [name, propertySchema] of Object.entries(branchProperties)) {
-      properties[name] = mergeProperty(properties[name], propertySchema);
+      unionProperties[name] = mergeProperty(unionProperties[name], propertySchema, "anyOf");
+    }
+  }
+  for (const [name, propertySchema] of Object.entries(unionProperties)) {
+    properties[name] = mergeProperty(properties[name], propertySchema, "allOf");
+  }
+
+  for (const branch of intersectionBranches) {
+    const branchProperties = isSchema(branch.properties) ? branch.properties : {};
+    for (const [name, propertySchema] of Object.entries(branchProperties)) {
+      properties[name] = mergeProperty(properties[name], propertySchema, "allOf");
     }
   }
 

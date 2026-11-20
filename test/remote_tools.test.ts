@@ -78,6 +78,72 @@ describe("remote tool registry", () => {
     });
   });
 
+  it("preserves fields and requirements from unions nested inside intersections", () => {
+    expect(
+      normalizeInputSchema({
+        type: "object",
+        allOf: [
+          {
+            anyOf: [
+              {
+                type: "object",
+                properties: {
+                  dataset: { type: "string" },
+                  query: { type: "string" },
+                },
+                required: ["dataset", "query"],
+              },
+              {
+                type: "object",
+                properties: {
+                  dataset: { type: "string" },
+                  trace_id: { type: "string" },
+                },
+                required: ["dataset", "trace_id"],
+              },
+            ],
+          },
+        ],
+      }),
+    ).toEqual({
+      type: "object",
+      properties: {
+        dataset: { type: "string" },
+        query: { type: "string" },
+        trace_id: { type: "string" },
+      },
+      required: ["dataset"],
+    });
+  });
+
+  it("intersects constraints for the same property across allOf branches", () => {
+    expect(
+      normalizeInputSchema({
+        type: "object",
+        allOf: [
+          {
+            type: "object",
+            properties: { limit: { type: "integer", minimum: 0 } },
+          },
+          {
+            type: "object",
+            properties: { limit: { type: "integer", maximum: 100 } },
+          },
+        ],
+      }),
+    ).toEqual({
+      type: "object",
+      properties: {
+        limit: {
+          allOf: [
+            { type: "integer", minimum: 0 },
+            { type: "integer", maximum: 100 },
+          ],
+        },
+      },
+    });
+  });
+
   it("validates and caches registry per credential scope", async () => {
     const fetchRegistry = vi.fn().mockResolvedValue({
       notModified: false,
